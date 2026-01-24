@@ -1,5 +1,5 @@
 # 🏢 CondoAdmin Pro - Sistema de Administración de Condominios
-
+hola
 Sistema completo de gestión de condominios desarrollado con **Flask**, **Python**, **JavaScript**, **Tailwind CSS** y **SQLite**.
 
 ## 📋 Características Principales
