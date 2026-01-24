@@ -1,0 +1,122 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Nueva Reserva - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200">
+            
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
+                <h2 class="text-2xl font-bold text-white flex items-center">
+                    <i class="fas fa-calendar-plus mr-3 text-blue-200"></i>
+                    Nueva Reserva de Instalación
+                </h2>
+                <p class="text-blue-100 text-sm mt-1">Complete los detalles para asegurar su espacio.</p>
+            </div>
+
+            <div class="p-8">
+                <form method="POST" action="{{ url_for('bookings.create') }}" id="bookingForm" class="space-y-6">
+                    
+                    <div>
+                        <label for="facility_id" class="block text-sm font-semibold text-gray-700 mb-2">Instalación *</label>
+                        <select id="facility_id" name="facility_id" required
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none appearance-none">
+                            <option value="">Seleccione una instalación</option>
+                            {% for facility in facilities %}
+                            <option value="{{ facility.id }}" 
+                                    data-requires-approval="{{ 'true' if facility.requires_approval else 'false' }}"
+                                    data-max-hours="{{ facility.max_hours_per_booking }}">
+                                {{ facility.name }} 
+                                {% if facility.requires_approval %} (Requiere aprobación de administración){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="booking_date" class="block text-sm font-semibold text-gray-700 mb-2">Fecha *</label>
+                            <input type="date" id="booking_date" name="booking_date" required
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label for="start_time" class="block text-sm font-semibold text-gray-700 mb-2">Hora Inicio *</label>
+                            <input type="time" id="start_time" name="start_time" required
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label for="end_time" class="block text-sm font-semibold text-gray-700 mb-2">Hora Fin *</label>
+                            <input type="time" id="end_time" name="end_time" required
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="md:col-span-3">
+                            <label for="purpose" class="block text-sm font-semibold text-gray-700 mb-2">Propósito de la reserva *</label>
+                            <input type="text" id="purpose" name="purpose" required maxlength="255"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="Ej: Cumpleaños familiar">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="num_guests" class="block text-sm font-semibold text-gray-700 mb-2">Invitados</label>
+                            <input type="number" id="num_guests" name="num_guests" min="1" max="50"
+                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                placeholder="0">
+                        </div>
+                    </div>
+
+                    <div id="availabilityAlert" class="hidden p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                        </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100">
+                        <a href="{{ url_for('bookings.index') }}" 
+                            class="w-full sm:w-auto px-6 py-2.5 text-center text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                        <button type="submit" id="submitBtn"
+                            class="w-full sm:w-auto px-8 py-2.5 text-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95">
+                            <i class="fas fa-save mr-2"></i>Confirmar Reserva
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mantengo tu lógica de JS pero actualizo el manejo de la clase "d-none" por "hidden" de Tailwind
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    const facilityId = document.getElementById('facility_id').value;
+    const date = document.getElementById('booking_date').value;
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
+    const alertBox = document.getElementById('availabilityAlert');
+    
+    if (!facilityId || !date || !startTime || !endTime) return;
+    
+    fetch('{{ url_for("bookings.check_availability") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            facility_id: facilityId,
+            date: date,
+            start_time: startTime,
+            end_time: endTime
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.available) {
+            e.preventDefault();
+            alertBox.textContent = 'La instalación no está disponible en ese horario. Por favor elija otro.';
+            alertBox.classList.remove('hidden');
+        } else {
+            alertBox.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

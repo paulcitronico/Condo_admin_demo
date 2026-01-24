@@ -1,0 +1,137 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Panel Financiero - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Gestión Financiera</h1>
+                <p class="text-gray-600">Resumen general y estadísticas del mes.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ url_for('financials.accounts') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
+                    <i class="fas fa-university mr-2 text-indigo-500"></i> Ver Cuentas
+                </a>
+                <a href="{{ url_for('financials.add_transaction') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 shadow-sm transition-all">
+                    <i class="fas fa-plus mr-2"></i> Nueva Transacción
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-hand-holding-usd fa-lg"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 uppercase">Recaudado Mes</p>
+                        <h3 class="text-2xl font-bold text-gray-900">${{ "%0.2f"|format(stats.total_collected or 0) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600">
+                        <i class="fas fa-exclamation-circle fa-lg"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 uppercase">Deuda Pendiente</p>
+                        <h3 class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(stats.outstanding_debts or 0) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-chart-line fa-lg"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 uppercase">Tasa de Cobro</p>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(stats.collection_rate or 0) }}%
+
+</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-bold text-gray-900 text-indigo-700">Últimas Transacciones</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for trans in recent_transactions %}
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {{ trans.created_at.strftime('%d/%m/%Y') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        Unidad {{ trans.account.unit_number }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {% if trans.transaction_type == 'payment' %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {{ '+' if trans.transaction_type == 'payment' else '-' }}${{ "%.2f"|format(trans.amount) }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">No hay transacciones.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-6">
+                    <h2 class="text-lg font-bold text-red-600 mb-4 italic"><i class="fas fa-user-clock mr-2"></i>Cuentas Críticas</h2>
+                    <div class="space-y-3">
+                        {% for acc in critical_accounts %}
+                        <div class="flex justify-between items-center p-2 rounded-lg bg-red-50">
+                            <span class="text-sm font-bold text-gray-800">Unidad {{ acc.unit_number }}</span>
+                            <span class="text-sm font-bold text-red-700">${{ "%.2f"|format(acc.total_owed - acc.total_paid) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="bg-indigo-900 rounded-xl p-6 text-white shadow-lg">
+                    <h3 class="text-lg font-bold mb-4">Pagos de Servicios</h3>
+                    <div class="space-y-4">
+                        {% for service in pending_services %}
+                        <div class="border-b border-indigo-700 pb-2 last:border-0">
+                            <p class="text-sm font-bold">{{ service.service_name }}</p>
+                            <div class="flex justify-between text-xs text-indigo-200 mt-1">
+                                <span>Vence: {{ service.due_date.strftime('%d/%m') }}</span>
+                                <span class="font-bold">${{ "%.2f"|format(service.amount) }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a href="{{ url_for('financials.services') }}" class="inline-flex items-center text-xs font-bold text-white hover:text-indigo-200 mt-4 transition-colors">
+                        Ver todos los servicios <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

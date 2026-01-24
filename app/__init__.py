@@ -1,0 +1,165 @@
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from config import config
+from datetime import datetime
+db = SQLAlchemy()
+login_manager = LoginManager()
+migrate = Migrate()
+
+
+
+def create_app(config_name='default'):
+    """Factory para crear la aplicación Flask"""
+    
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+    
+    # Inicializar extensiones
+    db.init_app(app)
+    login_manager.init_app(app)
+    migrate.init_app(app, db)
+    
+    # Configurar login manager
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
+    login_manager.login_message_category = 'info'
+    
+    # *** AÑADE AQUÍ LOS FILTROS Y CONTEXT PROCESSOR ***
+    from datetime import datetime
+    
+    @app.template_filter('month_name')
+    def month_name_filter(month_number):
+        months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+        return months[month_number] if 1 <= month_number <= 12 else ''
+
+    @app.template_filter('linebreaks')
+    def linebreaks_filter(text):
+        if not text:
+            return ''
+        return text.replace('\n', '<br>')
+
+    @app.context_processor
+    def utility_processor():
+        return dict(now=datetime.now)
+    
+    # Registrar blueprints
+    from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(dashboard.bp)
+    app.register_blueprint(roles.bp)
+    app.register_blueprint(bookings.bp)
+    app.register_blueprint(parking.bp)
+    app.register_blueprint(financials.bp)
+    app.register_blueprint(announcements.bp)
+
+    
+    # Crear tablas si no existen
+    with app.app_context():
+        db.create_all()
+        
+        # Inicializar datos por defecto
+        from app.models.user import User, Role, ModulePermission
+        init_default_data()
+    
+    @app.context_processor
+    def inject_now():
+        # Esto permite usar {{ now }} en cualquier HTML
+        return {'now': datetime.utcnow()}
+    
+    
+    
+    return app
+
+
+def init_default_data():
+    """Inicializa roles y usuario admin por defecto"""
+    from app.models.user import Role, User, Module, ModulePermission
+    
+    # Crear módulos si no existen
+    modules_data = [
+        {'name': 'roles', 'display_name': 'Gestión de Roles y Permisos'},
+        {'name': 'bookings', 'display_name': 'Reserva de Espacios Comunes'},
+        {'name': 'parking', 'display_name': 'Estado de Estacionamientos'},
+        {'name': 'financials', 'display_name': 'Cuentas y Servicios Pagados'},
+        {'name': 'announcements', 'display_name': 'Comunicados Oficiales'},
+    ]
+    
+    for mod_data in modules_data:
+        if not Module.query.filter_by(name=mod_data['name']).first():
+            module = Module(**mod_data)
+            db.session.add(module)
+    
+    db.session.commit()
+    
+    # Crear roles por defecto si no existen
+    roles_data = [
+        {
+            'name': 'super_admin',
+            'display_name': 'Super Administrador',
+            'description': 'Acceso completo a todos los módulos',
+            'permissions': {'roles': 2, 'bookings': 2, 'parking': 2, 'financials': 2, 'announcements': 2}
+        },
+        {
+            'name': 'administrator',
+            'display_name': 'Administrador',
+            'description': 'Gestión operativa del condominio',
+            'permissions': {'roles': 1, 'bookings': 2, 'parking': 2, 'financials': 2, 'announcements': 2}
+        },
+        {
+            'name': 'security_guard',
+            'display_name': 'Guardia de Seguridad',
+            'description': 'Control de accesos y estacionamientos',
+            'permissions': {'roles': 0, 'bookings': 1, 'parking': 2, 'financials': 0, 'announcements': 1}
+        },
+        {
+            'name': 'board_member',
+            'display_name': 'Miembro de Directiva',
+            'description': 'Supervisión y aprobaciones',
+            'permissions': {'roles': 1, 'bookings': 1, 'parking': 1, 'financials': 2, 'announcements': 2}
+        },
+        {
+            'name': 'resident',
+            'display_name': 'Residente',
+            'description': 'Acceso básico para residentes',
+            'permissions': {'roles': 0, 'bookings': 2, 'parking': 1, 'financials': 1, 'announcements': 1}
+        }
+    ]
+    
+    for role_data in roles_data:
+        if not Role.query.filter_by(name=role_data['name']).first():
+            permissions = role_data.pop('permissions')
+            role = Role(**role_data)
+            db.session.add(role)
+            db.session.flush()
+            
+            # Crear permisos para cada módulo
+            for module_name, level in permissions.items():
+                module = Module.query.filter_by(name=module_name).first()
+                if module:
+                    perm = ModulePermission(
+                        role_id=role.id,
+                        module_id=module.id,
+                        permission_level=level
+                    )
+                    db.session.add(perm)
+    
+    db.session.commit()
+    
+    # Crear usuario admin por defecto si no existe
+    if not User.query.filter_by(email='admin@condoadmin.com').first():
+        admin_role = Role.query.filter_by(name='super_admin').first()
+        admin_user = User(
+            email='admin@condoadmin.com',
+            username='admin',
+            first_name='Administrador',
+            last_name='Sistema',
+            role_id=admin_role.id,
+            is_active=True
+        )
+        admin_user.set_password('admin123')  # Cambiar en producción
+        db.session.add(admin_user)
+        db.session.commit()
+        print("✅ Usuario admin creado: admin@condoadmin.com / admin123")

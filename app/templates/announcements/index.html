@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Comunicados - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+                <i class="fas fa-bullhorn text-blue-600 mr-3"></i>Comunicados
+            </h1>
+            <p class="text-gray-500 mt-1">Mantente al tanto de las novedades de tu comunidad.</p>
+        </div>
+        {% if current_user.can_write('announcements') %}
+        <a href="{{ url_for('announcements.create') }}" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-1">
+            <i class="fas fa-plus mr-2"></i>Crear Comunicado
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="flex gap-3 mb-8 overflow-x-auto pb-2">
+        <a href="{{ url_for('announcements.index', priority='all') }}" class="px-4 py-2 rounded-xl text-sm font-semibold {% if request.args.get('priority', 'all') == 'all' %}bg-gray-900 text-white shadow-md{% else %}bg-white text-gray-600 border border-gray-100 hover:bg-gray-50{% endif %}">Todos</a>
+        <a href="{{ url_for('announcements.index', priority='urgent') }}" class="px-4 py-2 rounded-xl text-sm font-semibold {% if request.args.get('priority') == 'urgent' %}bg-red-500 text-white shadow-md{% else %}bg-white text-gray-600 border border-gray-100 hover:bg-gray-50{% endif %}">Urgentes</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for announcement in announcements.items %}
+        <div class="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden">
+            <div class="px-6 pt-6">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+                    {% if announcement.priority == 'urgent' %} bg-red-100 text-red-600
+                    {% elif announcement.priority == 'important' %} bg-amber-100 text-amber-600
+                    {% else %} bg-blue-100 text-blue-600 {% endif %}">
+                    <span class="w-2 h-2 rounded-full mr-2 {% if announcement.priority == 'urgent' %}bg-red-500 animate-pulse{% elif announcement.priority == 'important' %}bg-amber-500{% else %}bg-blue-500{% endif %}"></span>
+                    {{ announcement.priority }}
+                </span>
+            </div>
+
+            <div class="p-6 flex-grow">
+                <h2 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {{ announcement.title }}
+                </h2>
+                <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">
+                    {{ announcement.content }}
+                </p>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between mt-auto">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
+                        {{ announcement.author.first_name[0] }}{{ announcement.author.last_name[0] }}
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-gray-800">{{ announcement.author.full_name }}</span>
+                        <span class="text-[10px] text-gray-400">{{ announcement.created_at.strftime('%d %b, %Y') }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('announcements.detail', announcement_id=announcement.id) }}" class="p-2 bg-white rounded-lg border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-20 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-bullhorn text-2xl text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">No hay comunicados</h3>
+            <p class="text-gray-500">Todo está tranquilo por aquí.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if announcements.pages > 1 %}
+    <div class="mt-12 flex justify-center gap-2">
+        {% for page_num in announcements.iter_pages() %}
+            {% if page_num %}
+                <a href="{{ url_for('announcements.index', page=page_num) }}" 
+                   class="w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all
+                   {% if page_num == announcements.page %} bg-blue-600 text-white shadow-lg shadow-blue-200 {% else %} bg-white text-gray-500 border border-gray-100 hover:bg-gray-50 {% endif %}">
+                    {{ page_num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

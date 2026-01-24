@@ -1,0 +1,339 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Pagos de Servicios - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center">
+                    <div class="h-12 w-2 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full mr-4"></div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-hand-holding-usd mr-3 text-blue-600"></i>Pagos de Servicios del Edificio
+                        </h1>
+                        <p class="text-gray-600 mt-1">Gestione todos los pagos de servicios del condominio</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('financials.add_service') }}" 
+                   class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <i class="fas fa-plus-circle mr-2"></i>Registrar Servicio
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium opacity-90">Total Servicios</p>
+                        <p class="text-3xl font-bold mt-2">{{ services.total }}</p>
+                    </div>
+                    <i class="fas fa-list-alt text-3xl opacity-80"></i>
+                </div>
+                <div class="mt-4 pt-4 border-t border-blue-400">
+                    <p class="text-sm opacity-90">Registrados este mes</p>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium opacity-90">Pagados</p>
+                        <p class="text-3xl font-bold mt-2">{{ services.items|selectattr('status', 'equalto', 'paid')|list|length }}</p>
+                    </div>
+                    <i class="fas fa-check-circle text-3xl opacity-80"></i>
+                </div>
+                <div class="mt-4 pt-4 border-t border-green-400">
+                    <p class="text-sm opacity-90">Al día con los pagos</p>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium opacity-90">Pendientes</p>
+                        <p class="text-3xl font-bold mt-2">{{ services.items|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+                    </div>
+                    <i class="fas fa-clock text-3xl opacity-80"></i>
+                </div>
+                <div class="mt-4 pt-4 border-t border-red-400">
+                    <p class="text-sm opacity-90">Por vencer este mes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Card -->
+        <div class="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-filter mr-2 text-blue-600"></i>Filtros de Búsqueda
+                </h2>
+            </div>
+            <div class="p-6">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                        <select name="status" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+                                onchange="this.form.submit()">
+                            <option value="all" {% if request.args.get('status') == 'all' %}selected{% endif %}>Todos los estados</option>
+                            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>🟡 Pendiente</option>
+                            <option value="paid" {% if request.args.get('status') == 'paid' %}selected{% endif %}>🟢 Pagado</option>
+                            <option value="overdue" {% if request.args.get('status') == 'overdue' %}selected{% endif %}>🔴 Atrasado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
+                        <select name="category" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+                                onchange="this.form.submit()">
+                            <option value="all" {% if request.args.get('category') == 'all' %}selected{% endif %}>Todas las categorías</option>
+                            <option value="electricity" {% if request.args.get('category') == 'electricity' %}selected{% endif %}>⚡ Electricidad</option>
+                            <option value="water" {% if request.args.get('category') == 'water' %}selected{% endif %}>💧 Agua</option>
+                            <option value="maintenance" {% if request.args.get('category') == 'maintenance' %}selected{% endif %}>🔧 Mantenimiento</option>
+                            <option value="security" {% if request.args.get('category') == 'security' %}selected{% endif %}>👮 Seguridad</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mes</label>
+                        <select name="month" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+                                onchange="this.form.submit()">
+                            <option value="all" {% if request.args.get('month') == 'all' %}selected{% endif %}>Todos los meses</option>
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <a href="{{ url_for('financials.services') }}" 
+                           class="w-full inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 font-medium">
+                            <i class="fas fa-eraser mr-2"></i>Limpiar Filtros
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Services Table -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div class="flex flex-col md:flex-row md:items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-800">Lista de Servicios Registrados</h2>
+                    <span class="text-sm text-gray-600 font-medium mt-2 md:mt-0">
+                        Mostrando {{ services.items|length }} de {{ services.total }} registros
+                    </span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-file-invoice mr-1"></i>Servicio
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-building mr-1"></i>Proveedor
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-tag mr-1"></i>Categoría
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-money-bill-wave mr-1"></i>Monto
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-calendar-day mr-1"></i>Fecha Límite
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-calendar-check mr-1"></i>Estado
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                <i class="fas fa-cogs mr-1"></i>Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for service in services.items %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-file-invoice text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-900">{{ service.service_name }}</div>
+                                        {% if service.invoice_number %}
+                                        <div class="text-xs text-gray-500">Factura: {{ service.invoice_number }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ service.provider or 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                    {% if service.category == 'electricity' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+                                    {% elif service.category == 'water' %}bg-blue-100 text-blue-800 border border-blue-200
+                                    {% elif service.category == 'maintenance' %}bg-gray-100 text-gray-800 border border-gray-200
+                                    {% elif service.category == 'security' %}bg-purple-100 text-purple-800 border border-purple-200
+                                    {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+                                    <i class="fas fa-tag mr-1"></i>
+                                    {{ service.category|capitalize }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-lg font-bold text-gray-900">${{ "%.2f"|format(service.amount) }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
+                                    <span class="text-sm font-medium text-gray-900">{{ service.due_date.strftime('%d/%m/%Y') }}</span>
+                                </div>
+                                <!-- Removed days left calculation since 'today' variable is not defined -->
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
+                                        {% if service.status == 'paid' %}bg-green-100 text-green-800 border border-green-200
+                                        {% elif service.status == 'overdue' %}bg-red-100 text-red-800 border border-red-200
+                                        {% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
+                                        <span class="w-1.5 h-1.5 rounded-full mr-1.5
+                                            {% if service.status == 'paid' %}bg-green-500
+                                            {% elif service.status == 'overdue' %}bg-red-500
+                                            {% else %}bg-yellow-500{% endif %}"></span>
+                                        {{ service.status|upper }}
+                                    </span>
+                                    {% if service.paid_date %}
+                                    <div class="ml-2 text-xs text-gray-500">
+                                        Pagado: {{ service.paid_date.strftime('%d/%m') }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ url_for('financials.service_detail', service_id=service.id) }}" 
+                                       class="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 font-medium text-sm">
+                                        <i class="fas fa-eye mr-1.5"></i>Ver
+                                    </a>
+                                    {% if current_user.can_write('financials') and service.status != 'paid' %}
+                                    <button class="inline-flex items-center px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-all duration-200 font-medium text-sm">
+                                        <i class="fas fa-check mr-1.5"></i>Pagar
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                                    <p class="text-gray-500 font-medium text-lg">No hay servicios registrados</p>
+                                    <p class="text-gray-400 text-sm mt-2">Comience registrando un nuevo servicio</p>
+                                    <a href="{{ url_for('financials.add_service') }}" 
+                                       class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                                        <i class="fas fa-plus mr-2"></i>Registrar Primer Servicio
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if services.pages > 1 %}
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-sm text-gray-700">
+                Mostrando página <span class="font-bold">{{ services.page }}</span> de <span class="font-bold">{{ services.pages }}</span>
+            </div>
+            
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                {% if services.has_prev %}
+                <a href="{{ url_for('financials.services', page=services.prev_num, status=request.args.get('status', 'all'), category=request.args.get('category', 'all'), month=request.args.get('month', 'all')) }}"
+                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left mr-1"></i> Anterior
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400">
+                    <i class="fas fa-chevron-left mr-1"></i> Anterior
+                </span>
+                {% endif %}
+                
+                {% for page_num in services.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                    {% if page_num %}
+                        {% if page_num == services.page %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-blue-600 bg-blue-600 text-white text-sm font-medium">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('financials.services', page=page_num, status=request.args.get('status', 'all'), category=request.args.get('category', 'all'), month=request.args.get('month', 'all')) }}"
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if services.has_next %}
+                <a href="{{ url_for('financials.services', page=services.next_num, status=request.args.get('status', 'all'), category=request.args.get('category', 'all'), month=request.args.get('month', 'all')) }}"
+                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                </a>
+                {% else %}
+                <span class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400">
+                    Siguiente <i class="fas fa-chevron-right ml-1"></i>
+                </span>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        <!-- Summary -->
+        <div class="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen Financiero</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-white rounded-lg border border-gray-300">
+                    <p class="text-sm text-gray-600">Total Pendiente</p>
+                    <p class="text-2xl font-bold text-yellow-600">
+                        ${% set pending_total = services.items|selectattr('status', 'equalto', 'pending')|map(attribute='amount')|sum %}{{ "%.2f"|format(pending_total) }}
+                    </p>
+                </div>
+                <div class="p-4 bg-white rounded-lg border border-gray-300">
+                    <p class="text-sm text-gray-600">Total Pagado</p>
+                    <p class="text-2xl font-bold text-green-600">
+                        ${% set paid_total = services.items|selectattr('status', 'equalto', 'paid')|map(attribute='amount')|sum %}{{ "%.2f"|format(paid_total) }}
+                    </p>
+                </div>
+                <div class="p-4 bg-white rounded-lg border border-gray-300">
+                    <p class="text-sm text-gray-600">Total General</p>
+                    <p class="text-2xl font-bold text-blue-600">
+                        ${% set total_amount = services.items|map(attribute='amount')|sum %}{{ "%.2f"|format(total_amount) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

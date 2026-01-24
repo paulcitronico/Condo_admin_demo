@@ -1,0 +1,83 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Mapa de Estacionamientos</h1>
+            <p class="text-gray-500">Haz clic en un espacio para gestionar o asignar.</p>
+        </div>
+        
+        <div class="flex gap-3">
+            <a href="{{ url_for('parking.create') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center">
+                <i class="fas fa-plus-circle mr-2"></i> Añadir Espacio
+            </a>
+            
+            <button onclick="window.print()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50">
+                <i class="fas fa-print mr-2"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <a href="{{ url_for('parking.index', floor='all') }}" 
+           class="px-4 py-2 rounded-lg {% if current_floor == 'all' %}bg-blue-600 text-white{% else %}bg-white text-gray-600{% endif %}">Todos</a>
+        {% for f in floors %}
+        <a href="{{ url_for('parking.index', floor=f) }}" 
+           class="px-4 py-2 rounded-lg {% if current_floor == f|string %}bg-blue-600 text-white{% else %}bg-white text-gray-600{% endif %}">Piso {{ f }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {% for spot in spots %}
+        <div class="relative group">
+            <a href="{{ url_for('parking.spot_detail', spot_id=spot.id) }}" 
+               class="block p-4 rounded-2xl shadow-sm transition-transform hover:scale-105 text-white h-full
+               {% if spot.status == 'occupied' %} bg-rose-500 
+               {% elif spot.assigned_user_id %} bg-sky-500 
+               {% elif spot.status == 'available' %} bg-emerald-500 
+               {% elif spot.status == 'reserved' %} bg-amber-500 
+               {% else %} bg-gray-500 {% endif %}">
+                
+                <div class="flex justify-between items-start">
+                    <i class="fas {% if spot.spot_type == 'disabled' %}fa-wheelchair{% else %}fa-car{% endif %} opacity-50"></i>
+                    <span class="text-[10px] font-bold bg-black/20 px-2 py-0.5 rounded">PISO {{ spot.floor }}</span>
+                </div>
+
+                <div class="text-center my-4">
+                    <span class="text-3xl font-black">{{ spot.spot_number }}</span>
+                    <div class="text-[10px] opacity-80 font-bold uppercase">{{ spot.status }}</div>
+                </div>
+
+                <div class="text-[10px] uppercase font-bold border-t border-white/20 pt-2 truncate">
+    {% if spot.assigned_user %}
+        <i class="fas fa-user mr-1"></i> {{ spot.assigned_user.last_name }}
+    {% elif spot.status == 'occupied' %}
+        <i class="fas fa-moped mr-1"></i> Ocupado (Manual)
+    {% elif spot.status == 'reserved' %}
+        <i class="fas fa-clock mr-1"></i> Reservado
+    {% else %}
+        <i class="fas fa-unlock mr-1"></i> Disponible
+    {% endif %}
+</div>
+            </a>
+
+            {% if current_user.can_write('parking') %}
+            <form action="{{ url_for('parking.toggle_status', spot_id=spot.id) }}" method="POST" 
+                  class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button type="submit" class="bg-white/20 hover:bg-white/40 p-2 rounded-lg text-white backdrop-blur-sm" 
+                        title="Cambiar estado rápido (Ocupar/Liberar)">
+                    <i class="fas fa-bolt text-xs"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+            <i class="fas fa-car-slash text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 font-medium">No se encontraron espacios en este piso.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

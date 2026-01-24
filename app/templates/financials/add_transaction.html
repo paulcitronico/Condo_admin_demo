@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Agregar Transacción - Finanzas{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8 px-4">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
+            <div class="bg-indigo-700 px-6 py-4">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                    <i class="fas fa-exchange-alt mr-3"></i>
+                    Registrar Transacción
+                </h2>
+            </div>
+
+            <form method="POST" action="{{ url_for('financials.add_transaction') }}" class="p-6 space-y-5">
+                <!-- Unidad/Departamento -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Unidad/Departamento *</label>
+                    <select name="account_id" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                        <option value="">Seleccione una unidad</option>
+                        {% for account in accounts %}
+                        <option value="{{ account.id }}" {% if account.id == request.args.get('account_id', default=0)|int %}selected{% endif %}>
+                            Unidad {{ account.unit_number }} 
+                            {% if account.user %}- {{ account.user.full_name }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Monto y Tipo de Transacción -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Monto ($) *</label>
+                        <input type="number" name="amount" step="0.01" required placeholder="0.00"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tipo de Transacción *</label>
+                        <select name="transaction_type" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                            <option value="">Seleccione tipo</option>
+                            <option value="payment">Pago (Ingreso)</option>
+                            <option value="charge">Cargo (Gasto Común/Multa)</option>
+                            <option value="adjustment">Ajuste</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Categoría -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Categoría *</label>
+                    <select name="category" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                        <option value="">Seleccione categoría</option>
+                        <option value="common_expenses">Gastos Comunes</option>
+                        <option value="water">Agua</option>
+                        <option value="electricity">Electricidad</option>
+                        <option value="maintenance">Mantenimiento</option>
+                        <option value="fee">Multa</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Mes y Año correspondiente -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Mes correspondiente *</label>
+                        <select name="period_month" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                            <option value="">Seleccione mes</option>
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Año *</label>
+                        <input type="number" name="period_year" value="{{ now.year }}" required min="2020" max="2030"
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Descripción *</label>
+                    <textarea name="description" rows="2" required
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        placeholder="Ej: Pago de gastos comunes mes de agosto"></textarea>
+                </div>
+
+                <!-- Número de Referencia -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Número de Referencia (Opcional)</label>
+                    <input type="text" name="reference_number" placeholder="Ej: Transf. 4567, Recibo 1234"
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center justify-between pt-4 border-t">
+                    <a href="{{ url_for('financials.index') }}" class="text-gray-500 hover:text-gray-700 font-medium flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Cancelar
+                    </a>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all flex items-center">
+                        <i class="fas fa-save mr-2"></i> Guardar Transacción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

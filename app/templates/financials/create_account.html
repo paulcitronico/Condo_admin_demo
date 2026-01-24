@@ -1,0 +1,38 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Nueva Unidad - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12 px-4">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+        <div class="bg-indigo-600 px-6 py-4">
+            <h2 class="text-white font-bold text-lg italic">Registrar Nueva Unidad</h2>
+        </div>
+        
+        <form method="POST" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Número de Unidad / Depto *</label>
+                <input type="text" name="unit_number" required placeholder="Ej: 101, A-24..."
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Asignar Propietario (Opcional)</label>
+                <select name="user_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500">
+                    <option value="">Sin asignar</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.full_name }} ({{ user.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="pt-4 flex items-center justify-between">
+                <a href="{{ url_for('financials.accounts') }}" class="text-sm text-gray-600 hover:underline">Volver</a>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors">
+                    Crear Unidad
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

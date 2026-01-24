@@ -1,0 +1,225 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dashboard - CondoAdmin{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <header>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold leading-tight text-gray-900">
+                Dashboard Overview
+            </h1>
+            <p class="mt-1 text-sm text-gray-600">
+                Bienvenido, {{ current_user.first_name }}. Aquí está el resumen de tu condominio.
+            </p>
+        </div>
+    </header>
+    
+    <main>
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Resumen Financiero -->
+            {% if financial_stats %}
+            <div class="mt-8">
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900">
+                                <i class="fas fa-chart-line text-blue-600"></i> Resumen Financiero
+                            </h3>
+                            <span class="text-sm text-gray-500">Mes Actual: {{ now.strftime('%B %Y') }}</span>
+                        </div>
+                        
+                        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                            <!-- Total Recaudado -->
+                            <div class="bg-white overflow-hidden rounded-lg border border-gray-200">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-gray-500 truncate">
+                                        Total Recaudado
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-gray-900">
+                                        ${{ "%.2f"|format(financial_stats.total_collected) }}
+                                    </dd>
+                                </div>
+                            </div>
+
+                            <!-- Balance Pendiente -->
+                            <div class="bg-white overflow-hidden rounded-lg border border-red-200">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-red-500 truncate">
+                                        Balance Pendiente
+                                    </dt>
+                                    <dd class="mt-1 text-3xl font-semibold text-red-600">
+                                        ${{ "%.2f"|format(financial_stats.total_pending) }}
+                                    </dd>
+                                </div>
+                            </div>
+
+                            <!-- Progreso de Cobro -->
+                            <div class="bg-white overflow-hidden rounded-lg border border-green-200 col-span-2">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-gray-500 truncate">
+                                        Progreso de Cobro
+                                    </dt>
+                                    <dd class="mt-1 text-xl font-semibold text-gray-900">
+                                        {{ financial_stats.accounts_paid }} de {{ financial_stats.total_accounts }} unidades
+                                    </dd>
+                                    <div class="mt-3 w-full bg-gray-200 rounded-full h-2.5">
+                                        <div class="bg-blue-600 h-2.5 rounded-full" 
+                                             style="width: {{ financial_stats.collection_progress }}%"></div>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        {{ "%.1f"|format(financial_stats.collection_progress) }}%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <!-- Roles y Permisos -->
+                {% if roles_summary %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            <i class="fas fa-users-cog text-purple-600"></i> Roles & Permisos
+                        </h3>
+                        <div class="overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rol</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Usuarios</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for item in roles_summary[:4] %}
+                                    <tr>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ item.role.display_name }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                ACTIVO
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                            {{ item.user_count }} usuarios
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Anuncios Recientes -->
+                {% if recent_announcements %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">
+                                <i class="fas fa-bullhorn text-blue-600"></i> Comunicados
+                            </h3>
+                            <a href="{{ url_for('announcements.index') }}" class="text-sm text-blue-600 hover:text-blue-800">
+                                Ver todos →
+                            </a>
+                        </div>
+                        <div class="space-y-3">
+                            {% for announcement in recent_announcements %}
+                            <div class="border-l-4 
+                                {% if announcement.priority == 'urgent' %}border-red-500
+                                {% elif announcement.priority == 'information' %}border-blue-500
+                                {% else %}border-gray-300{% endif %} pl-4 py-2">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-gray-900">
+                                            {{ announcement.title }}
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ announcement.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                        </p>
+                                    </div>
+                                    {% if announcement.priority == 'urgent' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                        URGENTE
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Estacionamiento y Reservas -->
+            <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <!-- Estacionamiento -->
+                {% if parking_stats %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            <i class="fas fa-car text-green-600"></i> Estado de Estacionamientos
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-gray-50 rounded">
+                                <p class="text-3xl font-bold text-gray-900">{{ parking_stats.total }}</p>
+                                <p class="text-xs text-gray-500">Total</p>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded">
+                                <p class="text-3xl font-bold text-green-600">{{ parking_stats.available }}</p>
+                                <p class="text-xs text-gray-500">Disponibles</p>
+                            </div>
+                            <div class="text-center p-4 bg-red-50 rounded">
+                                <p class="text-3xl font-bold text-red-600">{{ parking_stats.occupied }}</p>
+                                <p class="text-xs text-gray-500">Ocupados</p>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded">
+                                <p class="text-3xl font-bold text-blue-600">{{ parking_stats.reserved }}</p>
+                                <p class="text-xs text-gray-500">Reservados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Próximas Reservas -->
+                {% if upcoming_bookings %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">
+                            <i class="fas fa-calendar-check text-purple-600"></i> Próximas Reservas
+                        </h3>
+                        <div class="space-y-2">
+                            {% for booking in upcoming_bookings %}
+                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">{{ booking.facility.name }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ booking.booking_date.strftime('%d/%m/%Y') }} - 
+                                        {{ booking.start_time.strftime('%H:%M') }}
+                                    </p>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded
+                                    {% if booking.status == 'approved' %}bg-green-100 text-green-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ booking.status.upper() }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

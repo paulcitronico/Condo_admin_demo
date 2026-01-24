@@ -1,0 +1,180 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Registrar Servicio - Finanzas{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center mb-4">
+                <div class="h-10 w-2 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full mr-4"></div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-hand-holding-usd mr-3 text-blue-600"></i>Registrar Pago de Servicio
+                    </h1>
+                    <p class="text-gray-600 mt-1">Complete el formulario para registrar un nuevo pago de servicio del edificio</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+            <!-- Card Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
+                <h2 class="text-xl font-bold text-white">Información del Servicio</h2>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-6">
+                <form method="POST" action="{{ url_for('financials.add_service') }}">
+                    <!-- Service Name -->
+                    <div class="mb-6">
+                        <label for="service_name" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span class="text-red-500">*</span> Nombre del Servicio
+                        </label>
+                        <div class="relative">
+                            <input type="text" 
+                                   class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                   id="service_name" 
+                                   name="service_name" 
+                                   required 
+                                   maxlength="100"
+                                   placeholder="Ej: Luz, Agua, Mantenimiento, etc.">
+                            <i class="fas fa-file-invoice text-gray-400 absolute left-3 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <!-- Provider -->
+                    <div class="mb-6">
+                        <label for="provider" class="block text-sm font-medium text-gray-700 mb-2">
+                            Proveedor
+                        </label>
+                        <div class="relative">
+                            <input type="text" 
+                                   class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                   id="provider" 
+                                   name="provider" 
+                                   maxlength="100"
+                                   placeholder="Nombre de la empresa proveedora">
+                            <i class="fas fa-building text-gray-400 absolute left-3 top-3.5"></i>
+                        </div>
+                    </div>
+
+                    <!-- Amount and Category -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Amount -->
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="text-red-500">*</span> Monto
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3.5 text-gray-500 font-medium">$</span>
+                                <input type="number" 
+                                       class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       id="amount" 
+                                       name="amount" 
+                                       step="0.01" 
+                                       required
+                                       placeholder="0.00"
+                                       min="0">
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="text-red-500">*</span> Categoría
+                            </label>
+                            <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+                                    id="category" 
+                                    name="category" 
+                                    required>
+                                <option value="" disabled selected class="text-gray-400">Seleccione una categoría</option>
+                                <option value="electricity" class="py-2">⚡ Electricidad</option>
+                                <option value="water" class="py-2">💧 Agua</option>
+                                <option value="maintenance" class="py-2">🔧 Mantenimiento</option>
+                                <option value="security" class="py-2">👮 Seguridad</option>
+                                <option value="other" class="py-2">📋 Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Due Date and Invoice Number -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Due Date -->
+                        <div>
+                            <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                <span class="text-red-500">*</span> Fecha Límite
+                            </label>
+                            <div class="relative">
+                                <input type="date" 
+                                       class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       id="due_date" 
+                                       name="due_date" 
+                                       required>
+                                <i class="fas fa-calendar-alt text-gray-400 absolute left-3 top-3.5"></i>
+                            </div>
+                        </div>
+
+                        <!-- Invoice Number -->
+                        <div>
+                            <label for="invoice_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                Número de Factura
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                       class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                       id="invoice_number" 
+                                       name="invoice_number" 
+                                       maxlength="50"
+                                       placeholder="Número de factura (opcional)">
+                                <i class="fas fa-hashtag text-gray-400 absolute left-3 top-3.5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-8">
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-sticky-note mr-2 text-gray-500"></i>Notas
+                        </label>
+                        <textarea class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                  id="notes" 
+                                  name="notes" 
+                                  rows="4"
+                                  placeholder="Agregue cualquier información adicional relevante..."></textarea>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row justify-between gap-4 pt-6 border-t border-gray-200">
+                        <a href="{{ url_for('financials.services') }}" 
+                           class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium shadow-sm">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                            <i class="fas fa-save mr-2"></i>Registrar Servicio
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Text -->
+        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                <div>
+                    <p class="text-sm text-blue-800 font-medium">Información importante</p>
+                    <p class="text-sm text-blue-600 mt-1">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        Los campos marcados con <span class="text-red-500 font-bold">*</span> son obligatorios.
+                        El sistema calculará automáticamente el estado del pago según la fecha límite.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

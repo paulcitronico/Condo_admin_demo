@@ -1,0 +1,36 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto py-12 px-4">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Reservar para Visita: {{ spot.spot_number }}</h2>
+        
+        <form method="POST" class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Visitante</label>
+                <input type="text" name="visitor_name" required class="w-full p-3 rounded-xl border border-gray-200 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Patente/Placa</label>
+                    <input type="text" name="vehicle_plate" class="w-full p-3 rounded-xl border border-gray-200 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Modelo Vehículo</label>
+                    <input type="text" name="vehicle_model" class="w-full p-3 rounded-xl border border-gray-200 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Notas adicionales</label>
+                <textarea name="notes" rows="3" class="w-full p-3 rounded-xl border border-gray-200 outline-none"></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 bg-amber-500 text-white py-3 rounded-xl font-bold hover:bg-amber-600">
+                    Confirmar Reserva
+                </button>
+                <a href="{{ url_for('parking.index') }}" class="flex-1 bg-gray-100 text-center py-3 rounded-xl font-bold">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

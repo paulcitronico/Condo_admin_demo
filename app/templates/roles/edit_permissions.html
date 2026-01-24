@@ -1,0 +1,81 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Editar Permisos: {{ role.display_name }} - Roles{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-key me-2"></i>Editar Permisos: {{ role.display_name }}
+                    </h2>
+                    <span class="badge bg-primary fs-6">{{ role.name }}</span>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('roles.edit_role_permissions', role_id=role.id) }}">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Módulo</th>
+                                        <th width="15%" class="text-center">Sin Acceso</th>
+                                        <th width="15%" class="text-center">Lectura</th>
+                                        <th width="15%" class="text-center">Lectura/Escritura</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for module in modules %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ module.display_name }}</strong><br>
+                                            <small class="text-muted">{{ module.description or 'Sin descripción' }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="permission_{{ module.id }}" value="0" 
+                                                   {% if current_permissions[module.id] == 0 %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="permission_{{ module.id }}" value="1" 
+                                                   {% if current_permissions[module.id] == 1 %}checked{% endif %}>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="radio" name="permission_{{ module.id }}" value="2" 
+                                                   {% if current_permissions[module.id] == 2 %}checked{% endif %}>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('roles.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Permisos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-2">
+            <!-- Leyenda -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Leyenda</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-1"><strong>Sin Acceso (0):</strong> No puede ver el módulo</p>
+                    <p class="small mb-1"><strong>Lectura (1):</strong> Solo puede ver información</p>
+                    <p class="small mb-0"><strong>Lectura/Escritura (2):</strong> Puede crear, editar y eliminar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

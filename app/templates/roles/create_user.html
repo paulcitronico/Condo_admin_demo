@@ -1,0 +1,160 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Crear Usuario - Roles{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    <h1 class="text-2xl font-bold text-gray-900">Crear Nuevo Usuario</h1>
+                </div>
+            </div>
+
+            <!-- Form Body -->
+            <form method="POST" action="{{ url_for('roles.create_user') }}" class="p-6 space-y-6">
+                <!-- Sección: Información Personal -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-100">Información Personal</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nombre <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="first_name" 
+                                   name="first_name" 
+                                   required 
+                                   maxlength="50"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="Ingresa el nombre">
+                        </div>
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Apellido <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="last_name" 
+                                   name="last_name" 
+                                   required 
+                                   maxlength="50"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="Ingresa el apellido">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Contacto -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-100">Información de Contacto</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                Correo Electrónico <span class="text-red-500">*</span>
+                            </label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="email" 
+                                   required 
+                                   maxlength="120"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="correo@ejemplo.com">
+                        </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                Teléfono <span class="text-gray-400">(opcional)</span>
+                            </label>
+                            <input type="tel" 
+                                   id="phone" 
+                                   name="phone" 
+                                   maxlength="20"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="+1 (555) 123-4567">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección: Credenciales y Asignación -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-100">Credenciales y Asignación</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nombre de Usuario <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="username" 
+                                   name="username" 
+                                   required 
+                                   maxlength="80"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="nombre.usuario">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                                Contraseña <span class="text-red-500">*</span>
+                            </label>
+                            <input type="password" 
+                                   id="password" 
+                                   name="password" 
+                                   required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="unit_number" class="block text-sm font-medium text-gray-700 mb-2">
+                                Unidad / Departamento <span class="text-gray-400">(opcional)</span>
+                            </label>
+                            <input type="text" 
+                                   id="unit_number" 
+                                   name="unit_number" 
+                                   maxlength="20"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   placeholder="Ej: Torre A, 101">
+                        </div>
+                        <div>
+                            <label for="role_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Rol de Usuario <span class="text-red-500">*</span>
+                            </label>
+                            <select id="role_id" 
+                                    name="role_id" 
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                <option value="" disabled selected>-- Selecciona un rol --</option>
+                                {% for role in roles %}
+                                <option value="{{ role.id }}">{{ role.display_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <a href="{{ url_for('roles.users') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

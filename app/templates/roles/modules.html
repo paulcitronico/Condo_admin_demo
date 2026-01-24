@@ -1,0 +1,94 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Módulos del Sistema - Roles{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-cubes me-2"></i>Módulos del Sistema</h1>
+        {% if current_user.can_admin('roles') %}
+        <a href="{{ url_for('roles.create_module') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nuevo Módulo
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th>Módulo</th>
+                            <th>Nombre del Sistema</th>
+                            <th>Ruta</th>
+                            <th>Ícono</th>
+                            <th>Orden</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for module in modules %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <strong>{{ module.display_name }}</strong>
+                                {% if module.description %}
+                                <br><small class="text-muted">{{ module.description }}</small>
+                                {% endif %}
+                                
+                                {% if module.children %}
+                                <div class="mt-2 ms-3">
+                                    <small class="text-muted">Submódulos:</small>
+                                    {% for child in module.children|sort(attribute='order') %}
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="fas fa-arrow-right text-muted me-2" style="font-size: 0.8rem;"></i>
+                                        <span>{{ child.display_name }}</span>
+                                        {% if child.route %}
+                                        <small class="text-muted ms-2">({{ child.route }})</small>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ module.name }}</code></td>
+                            <td>{{ module.route or 'N/A' }}</td>
+                            <td>
+                                {% if module.icon %}
+                                <i class="fas fa-{{ module.icon }}"></i>
+                                {% endif %}
+                            </td>
+                            <td>{{ module.order }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if module.is_active else 'secondary' }}">
+                                    {{ 'Activo' if module.is_active else 'Inactivo' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if current_user.can_admin('roles') %}
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No hay módulos definidos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

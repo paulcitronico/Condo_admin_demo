@@ -1,0 +1,139 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Editar Anuncio - Condo Admin{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 border-b border-gray-200">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    <h1 class="text-2xl font-bold text-gray-900">Editar Anuncio</h1>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form method="POST" action="{{ url_for('announcements.edit', announcement_id=announcement.id) }}" class="p-6 space-y-6">
+                <!-- Título -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                        Título <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="title" 
+                           name="title" 
+                           value="{{ announcement.title }}" 
+                           required 
+                           maxlength="200"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                           placeholder="Ingresa el título del anuncio">
+                </div>
+
+                <!-- Contenido -->
+                <div>
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                        Contenido <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="content" 
+                              name="content" 
+                              rows="6" 
+                              required
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                              placeholder="Escribe el contenido del anuncio...">{{ announcement.content }}</textarea>
+                </div>
+
+                <!-- Fila de Prioridad y Categoría -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Prioridad -->
+                    <div>
+                        <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">
+                            Prioridad
+                        </label>
+                        <select id="priority" 
+                                name="priority"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <option value="normal" {% if announcement.priority == 'normal' %}selected{% endif %}>Normal</option>
+                            <option value="urgent" {% if announcement.priority == 'urgent' %}selected{% endif %}>Urgente</option>
+                            <option value="information" {% if announcement.priority == 'information' %}selected{% endif %}>Informativo</option>
+                        </select>
+                    </div>
+
+                    <!-- Categoría -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                            Categoría
+                        </label>
+                        <select id="category" 
+                                name="category"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <option value="notice" {% if announcement.category == 'notice' %}selected{% endif %}>Aviso</option>
+                            <option value="maintenance" {% if announcement.category == 'maintenance' %}selected{% endif %}>Mantenimiento</option>
+                            <option value="event" {% if announcement.category == 'event' %}selected{% endif %}>Evento</option>
+                            <option value="emergency" {% if announcement.category == 'emergency' %}selected{% endif %}>Emergencia</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Área Afectada -->
+                <div>
+                    <label for="affected_area" class="block text-sm font-medium text-gray-700 mb-2">
+                        Área Afectada <span class="text-gray-400">(opcional)</span>
+                    </label>
+                    <input type="text" 
+                           id="affected_area" 
+                           name="affected_area" 
+                           value="{{ announcement.affected_area or '' }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                           placeholder="Ej: Torre A, Piscina, Estacionamiento">
+                </div>
+
+                <!-- Fecha de Expiración -->
+                <div>
+                    <label for="expiry_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha de Expiración <span class="text-gray-400">(opcional)</span>
+                    </label>
+                    <input type="date" 
+                           id="expiry_date" 
+                           name="expiry_date"
+                           value="{{ announcement.expiry_date.strftime('%Y-%m-%d') if announcement.expiry_date else '' }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                </div>
+
+                <!-- Checkbox Publicado -->
+                <div class="flex items-center">
+                    <input type="checkbox" 
+                           id="is_published" 
+                           name="is_published" 
+                           {% if announcement.is_published %}checked{% endif %}
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="is_published" class="ml-3 block text-sm font-medium text-gray-700">
+                        Publicado inmediatamente
+                    </label>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <a href="{{ url_for('announcements.detail', announcement_id=announcement.id) }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V2"/>
+                        </svg>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Cuenta {{ account.unit_number }} - Finanzas{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col lg:flex-row gap-6">
+        <div class="lg:w-2/3">
+            <!-- Información de la cuenta -->
+            <div class="bg-white rounded-lg shadow-md mb-6">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-file-invoice-dollar mr-2 text-blue-500"></i>
+                        Unidad {{ account.unit_number }}
+                    </h2>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                        {% if account.status == 'current' %}bg-green-100 text-green-800
+                        {% elif account.status == 'overdue' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ account.status.upper() }}
+                    </span>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <h5 class="text-lg font-medium text-gray-700 mb-3">Información General</h5>
+                            <div class="space-y-2">
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Unidad:</span>
+                                    <span class="text-gray-800">{{ account.unit_number }}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Propietario:</span>
+                                    <span class="text-gray-800">
+                                        {% if account.user %}
+                                            {{ account.user.full_name }}
+                                        {% else %}
+                                            <span class="text-gray-400">Sin asignar</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Balance Actual:</span>
+                                    <span class="{% if account.balance < 0 %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
+                                        ${{ "%.2f"|format(account.balance) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="text-lg font-medium text-gray-700 mb-3">Resumen Financiero</h5>
+                            <div class="space-y-2">
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Total Adeudado:</span>
+                                    <span class="text-gray-800">${{ "%.2f"|format(account.total_owed) }}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Total Pagado:</span>
+                                    <span class="text-gray-800">${{ "%.2f"|format(account.total_paid) }}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-600 font-medium">Meses de Atraso:</span>
+                                    <span class="text-gray-800">{{ account.months_overdue }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transacciones -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h5 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-exchange-alt mr-2 text-blue-500"></i>
+                        Historial de Transacciones
+                    </h5>
+                    <a href="{{ url_for('financials.add_transaction', account_id=account.id) }}" 
+                       class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md text-sm transition duration-300 flex items-center">
+                        <i class="fas fa-plus mr-1"></i> Nueva
+                    </a>
+                </div>
+                <div class="p-6">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referencia</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registrado por</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for transaction in transactions.items %}
+                                <tr class="hover:bg-gray-50 transition duration-150">
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if transaction.transaction_type == 'payment' %}bg-green-100 text-green-800
+                                            {% elif transaction.transaction_type == 'charge' %}bg-red-100 text-red-800
+                                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                            {{ 'Pago' if transaction.transaction_type == 'payment' else 'Cargo' if transaction.transaction_type == 'charge' else 'Ajuste' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ transaction.category }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium
+                                        {% if transaction.transaction_type == 'payment' %}text-green-600
+                                        {% else %}text-red-600{% endif %}">
+                                        ${{ "%.2f"|format(transaction.amount) }}
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ transaction.reference_number or 'N/A' }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            {% if transaction.status == 'completed' %}bg-green-100 text-green-800
+                                            {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ transaction.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {{ transaction.created_by.full_name if transaction.created_by else 'Sistema' }}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500">
+                                        No hay transacciones registradas
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if transactions.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-6 flex justify-center">
+                <ul class="flex space-x-1">
+                    {% for page_num in transactions.iter_pages() %}
+                        {% if page_num %}
+                            <li>
+                                <a href="{{ url_for('financials.account_detail', account_id=account.id, page=page_num) }}" 
+                                   class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium
+                                   {% if page_num == transactions.page %}bg-blue-500 text-white border-blue-500
+                                   {% else %}text-gray-700 bg-white hover:bg-gray-50{% endif %}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <span class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-500">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+
+        <div class="lg:w-1/3">
+            <!-- Acciones -->
+            <div class="bg-white rounded-lg shadow-md mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h5 class="text-lg font-semibold text-gray-800">Acciones</h5>
+                </div>
+                <div class="p-6 space-y-3">
+                    <a href="{{ url_for('financials.accounts') }}" 
+                       class="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-md text-center transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver a Cuentas
+                    </a>
+                    <a href="{{ url_for('financials.add_transaction', account_id=account.id) }}" 
+                       class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md text-center transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i>Agregar Transacción
+                    </a>
+                </div>
+            </div>
+
+            <!-- Resumen -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h5 class="text-lg font-semibold text-gray-800">Resumen</h5>
+                </div>
+                <div class="p-6 space-y-2">
+                    <p class="flex justify-between text-sm">
+                        <span class="text-gray-600">Total transacciones:</span>
+                        <span class="font-medium text-gray-800">{{ account.transactions.count() }}</span>
+                    </p>
+                    <p class="flex justify-between text-sm">
+                        <span class="text-gray-600">Última actualización:</span>
+                        <span class="font-medium text-gray-800">{{ account.updated_at.strftime('%d/%m/%Y') }}</span>
+                    </p>
+                    <p class="flex justify-between text-sm">
+                        <span class="text-gray-600">Creada:</span>
+                        <span class="font-medium text-gray-800">{{ account.created_at.strftime('%d/%m/%Y') }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

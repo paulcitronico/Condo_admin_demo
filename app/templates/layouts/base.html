@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CondoAdmin Pro{% endblock %}</title>
+    
+    <!-- En la sección <head>, añade: -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="h-full">
+    <div class="min-h-full">
+        {% if current_user.is_authenticated %}
+        <!-- Navbar -->
+        <nav class="bg-blue-600">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <span class="text-white text-xl font-bold">
+                                <i class="fas fa-building"></i> CondoAdmin Pro
+                            </span>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="{{ url_for('dashboard.index') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-dashboard"></i> Dashboard
+                                </a>
+                                
+                                {% if current_user.can_read('roles') %}
+                                <a href="{{ url_for('roles.users') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-users-cog"></i> Roles
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.can_read('bookings') %}
+                                <a href="{{ url_for('bookings.index') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-calendar-check"></i> Reservas
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.can_read('parking') %}
+                                <a href="{{ url_for('parking.index') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-car"></i> Estacionamiento
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.can_read('financials') %}
+                                <a href="{{ url_for('financials.index') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-dollar-sign"></i> Finanzas
+                                </a>
+                                {% endif %}
+                                
+                                {% if current_user.can_read('announcements') %}
+                                <a href="{{ url_for('announcements.index') }}" 
+                                   class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                                    <i class="fas fa-bullhorn"></i> Comunicados
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <div class="relative ml-3">
+                                <div class="flex items-center">
+                                    <span class="text-white text-sm mr-3">
+                                        {{ current_user.full_name }}
+                                        <span class="text-blue-200 text-xs block">{{ current_user.role.display_name }}</span>
+                                    </span>
+                                    <a href="{{ url_for('auth.logout') }}" 
+                                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm">
+                                        <i class="fas fa-sign-out-alt"></i> Salir
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                    {% for category, message in messages %}
+                        <div class="rounded-md p-4 mb-4 
+                            {% if category == 'error' %}bg-red-50 border border-red-200
+                            {% elif category == 'success' %}bg-green-50 border border-green-200
+                            {% elif category == 'warning' %}bg-yellow-50 border border-yellow-200
+                            {% else %}bg-blue-50 border border-blue-200{% endif %}">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    {% if category == 'error' %}
+                                        <i class="fas fa-times-circle text-red-400"></i>
+                                    {% elif category == 'success' %}
+                                        <i class="fas fa-check-circle text-green-400"></i>
+                                    {% elif category == 'warning' %}
+                                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle text-blue-400"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm 
+                                        {% if category == 'error' %}text-red-800
+                                        {% elif category == 'success' %}text-green-800
+                                        {% elif category == 'warning' %}text-yellow-800
+                                        {% else %}text-blue-800{% endif %}">
+                                        {{ message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
