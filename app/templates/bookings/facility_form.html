@@ -1,0 +1,258 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+{% if facility %}Editar {{ facility.name }}{% else %}Nueva Instalación{% endif %} - Condo Admin
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-xl rounded-3xl overflow-hidden border border-slate-200">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6">
+                <h2 class="text-2xl font-bold text-white flex items-center">
+                    <i class="fas {{ 'fa-edit' if facility else 'fa-plus-circle' }} mr-3 text-blue-200"></i>
+                    {% if facility %}Editar Instalación{% else %}Nueva Instalación{% endif %}
+                </h2>
+                <p class="text-blue-100 text-sm mt-1">
+                    {% if facility %}
+                        Modifica los detalles de "{{ facility.name }}"
+                    {% else %}
+                        Configura un nuevo espacio común para reservas.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Formulario -->
+            <div class="p-8" x-data="{ 
+                selectedIcon: '{{ facility.icon if facility and facility.icon else 'fa-building' }}',
+                selectedColor: '{{ facility.color if facility and facility.color else '#3B82F6' }}',
+                requiresApproval: {{ 'true' if facility and facility.requires_approval else 'false' }},
+                isActive: {{ 'true' if (facility and facility.is_active) or not facility else 'false' }}
+            }">
+                <form method="POST" action="{{ form_action }}" class="space-y-8">
+                    
+                    <!-- ═══════════════════════════════ -->
+                    <!-- SECCIÓN 1: Información Básica   -->
+                    <!-- ═══════════════════════════════ -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="h-6 w-6 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-xs mr-2">1</span>
+                            Información Básica
+                        </h3>
+                        
+                        <div class="space-y-5">
+                            <!-- Nombre -->
+                            <div>
+                                <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Nombre de la instalación *
+                                </label>
+                                <input type="text" id="name" name="name" required maxlength="100"
+                                    value="{{ facility.name if facility else '' }}"
+                                    placeholder="Ej: Piscina Principal, Quincho Norte, Gimnasio..."
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none text-lg">
+                            </div>
+
+                            <!-- Descripción -->
+                            <div>
+                                <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Descripción
+                                </label>
+                                <textarea id="description" name="description" rows="3" maxlength="500"
+                                    placeholder="Describe la instalación, equipamiento disponible, reglas especiales..."
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none resize-none">{{ facility.description if facility else '' }}</textarea>
+                                <p class="text-xs text-gray-400 mt-1">Máximo 500 caracteres</p>
+                            </div>
+
+                            <!-- Capacidad -->
+                            <div>
+                                <label for="capacity" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Capacidad máxima (personas)
+                                </label>
+                                <input type="number" id="capacity" name="capacity" min="1" max="500"
+                                    value="{{ facility.capacity if facility else 20 }}"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════ -->
+                    <!-- SECCIÓN 2: Apariencia           -->
+                    <!-- ═══════════════════════════════ -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="h-6 w-6 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-xs mr-2">2</span>
+                            Apariencia
+                        </h3>
+
+                        <!-- Selector de Ícono -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Ícono</label>
+                            <input type="hidden" name="icon" :value="selectedIcon">
+                            <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2">
+                                {% for icon in icons %}
+                                <button type="button"
+                                    @click="selectedIcon = '{{ icon.value }}'"
+                                    :class="selectedIcon === '{{ icon.value }}' 
+                                        ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' 
+                                        : 'border-gray-200 hover:bg-gray-50'"
+                                    class="flex flex-col items-center justify-center p-3 rounded-xl border transition-all">
+                                    <i class="fas {{ icon.value }} text-lg mb-1"
+                                       :class="selectedIcon === '{{ icon.value }}' ? 'text-blue-600' : 'text-gray-500'"></i>
+                                    <span class="text-[9px] text-gray-500 font-medium">{{ icon.label }}</span>
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Selector de Color -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Color del calendario</label>
+                            <input type="hidden" name="color" :value="selectedColor">
+                            <div class="flex flex-wrap gap-3">
+                                {% set colors = [
+                                    {'hex': '#3B82F6', 'name': 'Azul'},
+                                    {'hex': '#10B981', 'name': 'Verde'},
+                                    {'hex': '#F59E0B', 'name': 'Ámbar'},
+                                    {'hex': '#EF4444', 'name': 'Rojo'},
+                                    {'hex': '#8B5CF6', 'name': 'Violeta'},
+                                    {'hex': '#EC4899', 'name': 'Rosa'},
+                                    {'hex': '#06B6D4', 'name': 'Cyan'},
+                                    {'hex': '#F97316', 'name': 'Naranja'},
+                                    {'hex': '#6366F1', 'name': 'Índigo'},
+                                    {'hex': '#14B8A6', 'name': 'Teal'}
+                                ] %}
+                                {% for color in colors %}
+                                <button type="button"
+                                    @click="selectedColor = '{{ color.hex }}'"
+                                    :class="selectedColor === '{{ color.hex }}' ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : ''"
+                                    class="w-10 h-10 rounded-xl shadow-sm transition-all hover:scale-105"
+                                    style="background-color: {{ color.hex }};"
+                                    title="{{ color.name }}">
+                                </button>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Preview -->
+                            <div class="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                                <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Vista previa</p>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-11 w-11 rounded-xl flex items-center justify-center text-white shadow-md transition-colors"
+                                         :style="'background-color: ' + selectedColor">
+                                        <i class="fas" :class="selectedIcon"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800" x-text="document.getElementById('name')?.value || 'Nombre de la instalación'"></p>
+                                        <div class="h-2 w-20 rounded-full mt-1" :style="'background-color: ' + selectedColor"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════ -->
+                    <!-- SECCIÓN 3: Configuración        -->
+                    <!-- ═══════════════════════════════ -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="h-6 w-6 bg-green-100 text-green-600 rounded-lg flex items-center justify-center text-xs mr-2">3</span>
+                            Configuración de Reservas
+                        </h3>
+
+                        <div class="space-y-5">
+                            <!-- Horas máximas y anticipación -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="max_hours_per_booking" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Máximo de horas por reserva
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" id="max_hours_per_booking" name="max_hours_per_booking" 
+                                            min="1" max="24"
+                                            value="{{ facility.max_hours_per_booking if facility else 4 }}"
+                                            class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none">
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">horas</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="min_advance_hours" class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Anticipación mínima
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" id="min_advance_hours" name="min_advance_hours" 
+                                            min="0" max="168"
+                                            value="{{ facility.min_advance_hours if facility else 24 }}"
+                                            class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 transition-all outline-none">
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">horas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Toggles -->
+                            <div class="space-y-4">
+                                <!-- Requiere aprobación -->
+                                <label class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-10 w-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                            <i class="fas fa-shield-alt text-yellow-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-800">Requiere aprobación</p>
+                                            <p class="text-xs text-gray-500">Un administrador debe aprobar cada reserva</p>
+                                        </div>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="checkbox" name="requires_approval" 
+                                            class="sr-only peer"
+                                            {% if facility and facility.requires_approval %}checked{% endif %}
+                                            x-model="requiresApproval">
+                                        <div class="w-11 h-6 bg-gray-300 peer-checked:bg-yellow-500 rounded-full transition-colors"></div>
+                                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                                    </div>
+                                </label>
+
+                                <!-- Activa -->
+                                <label class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-10 w-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                            <i class="fas fa-power-off text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-800">Instalación activa</p>
+                                            <p class="text-xs text-gray-500">Solo las activas aparecen en el sistema de reservas</p>
+                                        </div>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="checkbox" name="is_active" 
+                                            class="sr-only peer"
+                                            {% if (facility and facility.is_active) or not facility %}checked{% endif %}
+                                            x-model="isActive">
+                                        <div class="w-11 h-6 bg-gray-300 peer-checked:bg-green-500 rounded-full transition-colors"></div>
+                                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform peer-checked:translate-x-5"></div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════ -->
+                    <!-- BOTONES DE ACCIÓN               -->
+                    <!-- ═══════════════════════════════ -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
+                        <a href="{{ url_for('bookings.facilities_list') }}" 
+                           class="w-full sm:w-auto px-6 py-3 text-center text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </a>
+                        <button type="submit"
+                            class="w-full sm:w-auto px-8 py-3 text-center text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if facility %}Guardar Cambios{% else %}Crear Instalación{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

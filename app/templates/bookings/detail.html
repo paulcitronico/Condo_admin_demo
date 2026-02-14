@@ -5,9 +5,12 @@ Reserva #{{ booking.id }} - {{ booking.facility.name }}
 {% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ showRejectModal: false }">
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <!-- Header -->
+        
+        <!-- ═══════════════════════════════════ -->
+        <!-- HEADER                              -->
+        <!-- ═══════════════════════════════════ -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-white">
             <div class="flex items-center justify-between">
                 <div>
@@ -21,18 +24,51 @@ Reserva #{{ booking.id }} - {{ booking.facility.name }}
                     <span class="inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold 
                         {% if booking.status == 'approved' %}bg-green-100 text-green-800
                         {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                        {% elif booking.status == 'rejected' %}bg-red-100 text-red-800
+                        {% elif booking.status == 'cancelled' %}bg-gray-100 text-gray-800
                         {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        <i class="fas fa-{{ 'check' if booking.status == 'approved' else 'clock' if booking.status == 'pending' else 'ban' }} mr-1.5"></i>
-                        {{ booking.status.upper() }}
+                        <i class="fas 
+                            {% if booking.status == 'approved' %}fa-check-circle
+                            {% elif booking.status == 'pending' %}fa-clock
+                            {% elif booking.status == 'rejected' %}fa-times-circle
+                            {% elif booking.status == 'cancelled' %}fa-ban
+                            {% else %}fa-question-circle{% endif %} mr-1.5"></i>
+                        {% if booking.status == 'approved' %}APROBADA
+                        {% elif booking.status == 'pending' %}PENDIENTE
+                        {% elif booking.status == 'rejected' %}RECHAZADA
+                        {% elif booking.status == 'cancelled' %}CANCELADA
+                        {% else %}{{ booking.status|upper }}{% endif %}
                     </span>
                 </div>
             </div>
         </div>
 
-        <!-- Información -->
+        <!-- ═══════════════════════════════════ -->
+        <!-- ALERTA DE PENDIENTE (si aplica)     -->
+        <!-- ═══════════════════════════════════ -->
+        {% if booking.status == 'pending' and current_user.can_write('bookings') %}
+        <div class="bg-yellow-50 border-b border-yellow-100 px-8 py-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-bold text-yellow-800">Esta reserva requiere tu aprobación</p>
+                    <p class="text-sm text-yellow-600">Revisa los detalles y decide si aprobar o rechazar.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ═══════════════════════════════════ -->
+        <!-- CONTENIDO                           -->
+        <!-- ═══════════════════════════════════ -->
         <div class="p-8 space-y-6">
+            
             <!-- Grid de información -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Instalación -->
                 <div class="bg-gray-50/70 rounded-2xl p-6 border border-gray-100">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
                         <i class="fas fa-building mr-2"></i>Instalación
@@ -40,15 +76,29 @@ Reserva #{{ booking.id }} - {{ booking.facility.name }}
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600">Nombre</span>
-                            <span class="font-semibold text-gray-800">{{ booking.facility.name }}</span>
+                            <span class="font-semibold text-gray-800 flex items-center gap-2">
+                                {% if booking.facility.icon %}
+                                <i class="fas {{ booking.facility.icon }}" style="color: {{ booking.facility.color }}"></i>
+                                {% endif %}
+                                {{ booking.facility.name }}
+                            </span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600">Capacidad</span>
                             <span class="font-semibold text-gray-800">{{ booking.facility.capacity }} personas</span>
                         </div>
+                        {% if booking.facility.requires_approval %}
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Aprobación</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">
+                                <i class="fas fa-shield-alt mr-1"></i>REQUERIDA
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
+                <!-- Horario -->
                 <div class="bg-gray-50/70 rounded-2xl p-6 border border-gray-100">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
                         <i class="fas fa-clock mr-2"></i>Horario
@@ -66,40 +116,222 @@ Reserva #{{ booking.id }} - {{ booking.facility.name }}
                             <span class="text-sm text-gray-600">Fin</span>
                             <span class="font-semibold text-gray-800">{{ booking.end_time.strftime('%H:%M') }}</span>
                         </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Duración</span>
+                            <span class="font-semibold text-gray-800">{{ booking.duration_hours() }} horas</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Usuario -->
+            <!-- Usuario que reservó -->
             <div class="bg-gray-50/70 rounded-2xl p-6 border border-gray-100">
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
                     <i class="fas fa-user mr-2"></i>Reservado por
                 </h3>
-                <p class="font-semibold text-gray-800">{{ booking.user.full_name }}</p>
-                <p class="text-sm text-gray-500 mt-1">
-                    <i class="fas fa-envelope mr-1"></i>{{ booking.user.email }}
-                    {% if booking.user.unit_number %}
-                    • <i class="fas fa-home mr-1"></i>Unidad {{ booking.user.unit_number }}
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-inner flex-shrink-0">
+                        {{ booking.user.full_name[0] }}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">{{ booking.user.full_name }}</p>
+                        <p class="text-sm text-gray-500 mt-0.5">
+                            <i class="fas fa-envelope mr-1"></i>{{ booking.user.email }}
+                            {% if booking.user.unit_number %}
+                            · <i class="fas fa-home mr-1"></i>Unidad {{ booking.user.unit_number }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Detalles de la reserva -->
+                {% if booking.purpose or booking.num_guests %}
+                <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                    {% if booking.purpose %}
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Propósito</span>
+                        <span class="font-semibold text-gray-800">{{ booking.purpose }}</span>
+                    </div>
                     {% endif %}
-                </p>
+                    {% if booking.num_guests %}
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Invitados</span>
+                        <span class="font-semibold text-gray-800">{{ booking.num_guests }} personas</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
 
-            <!-- Acciones -->
-            <div class="flex justify-between pt-6 border-t border-gray-200">
-                <a href="{{ url_for('bookings.index') }}" class="text-gray-600 hover:text-gray-800">
+            <!-- ═══════════════════════════════════ -->
+            <!-- INFO DE APROBACIÓN (si ya fue       -->
+            <!-- aprobada o rechazada)               -->
+            <!-- ═══════════════════════════════════ -->
+            {% if booking.status in ['approved', 'rejected'] and booking.approved_by %}
+            <div class="rounded-2xl p-6 border
+                {% if booking.status == 'approved' %}
+                    bg-green-50/70 border-green-100
+                {% else %}
+                    bg-red-50/70 border-red-100
+                {% endif %}">
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-4 flex items-center
+                    {% if booking.status == 'approved' %}text-green-500{% else %}text-red-500{% endif %}">
+                    <i class="fas {% if booking.status == 'approved' %}fa-check-circle{% else %}fa-times-circle{% endif %} mr-2"></i>
+                    {% if booking.status == 'approved' %}Aprobación{% else %}Rechazo{% endif %}
+                </h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm {% if booking.status == 'approved' %}text-green-700{% else %}text-red-700{% endif %}">
+                            {% if booking.status == 'approved' %}Aprobada{% else %}Rechazada{% endif %} por
+                        </span>
+                        <span class="font-semibold {% if booking.status == 'approved' %}text-green-800{% else %}text-red-800{% endif %}">
+                            {{ booking.approved_by.full_name }}
+                        </span>
+                    </div>
+                    {% if booking.approved_at %}
+                    <div class="flex justify-between">
+                        <span class="text-sm {% if booking.status == 'approved' %}text-green-700{% else %}text-red-700{% endif %}">Fecha</span>
+                        <span class="font-semibold {% if booking.status == 'approved' %}text-green-800{% else %}text-red-800{% endif %}">
+                            {{ booking.approved_at.strftime('%d/%m/%Y %H:%M') }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if booking.rejection_reason %}
+                    <div class="mt-3 pt-3 border-t border-red-200">
+                        <p class="text-sm font-medium text-red-700 mb-1">Motivo del rechazo:</p>
+                        <p class="text-sm text-red-600 bg-red-100 p-3 rounded-xl">{{ booking.rejection_reason }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ═══════════════════════════════════ -->
+            <!-- BOTONES DE APROBACIÓN               -->
+            <!-- (Solo si está pendiente y el        -->
+            <!--  usuario tiene permisos)            -->
+            <!-- ═══════════════════════════════════ -->
+            {% if booking.status == 'pending' and current_user.can_write('bookings') %}
+            <div class="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-6">
+                <h3 class="text-sm font-bold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-gavel mr-2 text-blue-500"></i>
+                    Decisión sobre esta reserva
+                </h3>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Botón Aprobar -->
+                    <form method="POST" action="{{ url_for('bookings.approve', booking_id=booking.id) }}"
+                          onsubmit="return confirm('¿Aprobar esta reserva?')"
+                          class="flex-1">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-bold shadow-md hover:shadow-lg transform active:scale-95">
+                            <i class="fas fa-check-circle mr-2 text-lg"></i>
+                            Aprobar Reserva
+                        </button>
+                    </form>
+
+                    <!-- Botón Rechazar (abre modal) -->
+                    <button @click="showRejectModal = true" type="button"
+                            class="flex-1 flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-bold shadow-md hover:shadow-lg transform active:scale-95">
+                        <i class="fas fa-times-circle mr-2 text-lg"></i>
+                        Rechazar Reserva
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ═══════════════════════════════════ -->
+            <!-- ACCIONES GENERALES                  -->
+            <!-- ═══════════════════════════════════ -->
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-200 gap-3">
+                <a href="{{ url_for('bookings.index') }}" 
+                   class="w-full sm:w-auto flex items-center justify-center px-5 py-2.5 text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-all">
                     <i class="fas fa-arrow-left mr-2"></i>Volver al calendario
                 </a>
                 
                 {% if booking.can_cancel(current_user) %}
                 <form method="POST" action="{{ url_for('bookings.cancel', booking_id=booking.id) }}" 
-                      onsubmit="return confirm('¿Cancelar esta reserva?')">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-times mr-2"></i>Cancelar Reserva
+                      onsubmit="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                    <button type="submit" 
+                            class="w-full sm:w-auto flex items-center justify-center px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-medium transition-all">
+                        <i class="fas fa-ban mr-2"></i>Cancelar Reserva
                     </button>
                 </form>
                 {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- MODAL DE RECHAZO                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="showRejectModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <!-- Overlay oscuro -->
+        <div class="fixed inset-0 bg-black/50" @click="showRejectModal = false"></div>
+        
+        <!-- Contenido del modal -->
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             @click.away="showRejectModal = false">
+            
+            <!-- Header del modal -->
+            <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                    <i class="fas fa-times-circle mr-2"></i>
+                    Rechazar Reserva
+                </h3>
+                <p class="text-red-100 text-sm">Indica el motivo del rechazo</p>
+            </div>
+            
+            <!-- Formulario -->
+            <form method="POST" action="{{ url_for('bookings.reject', booking_id=booking.id) }}">
+                <div class="p-6">
+                    <!-- Resumen de la reserva -->
+                    <div class="bg-gray-50 rounded-xl p-3 mb-4 text-sm">
+                        <p class="text-gray-600">
+                            <strong>{{ booking.facility.name }}</strong> · 
+                            {{ booking.booking_date.strftime('%d/%m/%Y') }} · 
+                            {{ booking.start_time.strftime('%H:%M') }}-{{ booking.end_time.strftime('%H:%M') }}
+                        </p>
+                        <p class="text-gray-500">Solicitada por: {{ booking.user.full_name }}</p>
+                    </div>
+
+                    <!-- Campo de motivo -->
+                    <label for="rejection_reason" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Motivo del rechazo
+                    </label>
+                    <textarea id="rejection_reason" name="rejection_reason" rows="3"
+                        required
+                        placeholder="Ej: La instalación estará en mantenimiento en esa fecha..."
+                        class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-gray-50 transition-all outline-none resize-none"></textarea>
+                    <p class="text-xs text-gray-400 mt-1">Este motivo será visible para el solicitante.</p>
+                </div>
+
+                <!-- Botones del modal -->
+                <div class="flex gap-3 px-6 pb-6">
+                    <button type="button" @click="showRejectModal = false"
+                            class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-md">
+                        <i class="fas fa-times mr-1"></i> Confirmar Rechazo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
