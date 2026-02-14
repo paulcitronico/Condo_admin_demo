@@ -5,7 +5,10 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50 p-4 md:p-6">
     <div class="max-w-7xl mx-auto">
-        <!-- Header -->
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- HEADER                                      -->
+        <!-- ═══════════════════════════════════════════ -->
         <div class="mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center">
@@ -15,34 +18,217 @@
                         <p class="text-gray-600 mt-1">Detalles del espacio de estacionamiento</p>
                     </div>
                 </div>
-                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium 
-                    {% if spot.status == 'available' %}bg-green-100 text-green-800
-                    {% elif spot.status == 'occupied' %}bg-blue-100 text-blue-800
-                    {% elif spot.status == 'reserved' %}bg-yellow-100 text-yellow-800
-                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                    <span class="w-2 h-2 rounded-full mr-2 
-                        {% if spot.status == 'available' %}bg-green-500
-                        {% elif spot.status == 'occupied' %}bg-blue-500
-                        {% elif spot.status == 'reserved' %}bg-yellow-500
-                        {% else %}bg-gray-500{% endif %}"></span>
-                    {{ spot.status.upper() }}
-                </span>
+
+                <!-- Badge de estado visual -->
+                <div class="flex items-center gap-2">
+                    {# Estado de asignación #}
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
+                        {% if spot.has_owner %}bg-blue-100 text-blue-800
+                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        <span class="w-2 h-2 rounded-full mr-2 
+                            {% if spot.has_owner %}bg-blue-500{% else %}bg-gray-400{% endif %}"></span>
+                        {% if spot.has_owner %}ASIGNADO{% else %}SIN DUEÑO{% endif %}
+                    </span>
+
+                    {# Estado de ocupación física #}
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
+                        {% if spot.is_physically_occupied %}bg-red-100 text-red-800
+                        {% else %}bg-green-100 text-green-800{% endif %}">
+                        <span class="w-2 h-2 rounded-full mr-2 
+                            {% if spot.is_physically_occupied %}bg-red-500{% else %}bg-green-500{% endif %}"></span>
+                        {% if spot.is_physically_occupied %}OCUPADO{% else %}VACÍO{% endif %}
+                    </span>
+                </div>
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- INDICADOR VISUAL DE COLOR (barra superior) -->
+        <!-- ═══════════════════════════════════════════ -->
+        {% set state = spot.visual_state %}
+        <div class="mb-6 rounded-2xl overflow-hidden h-3 shadow-inner
+            {% if state == 'split' %}flex{% endif %}">
+            {% if state == 'green' %}
+                <div class="h-full w-full bg-emerald-500"></div>
+            {% elif state == 'blue' %}
+                <div class="h-full w-full bg-blue-600"></div>
+            {% elif state == 'red' %}
+                <div class="h-full w-full bg-red-500"></div>
+            {% elif state == 'split' %}
+                <div class="h-full w-1/2 bg-blue-600"></div>
+                <div class="h-full w-1/2 bg-red-500"></div>
+            {% else %}
+                <div class="h-full w-full bg-gray-400"></div>
+            {% endif %}
+        </div>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- GRID PRINCIPAL                              -->
+        <!-- ═══════════════════════════════════════════ -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column -->
+
+            <!-- ══════════════════════════════════════ -->
+            <!-- COLUMNA IZQUIERDA (2/3)                -->
+            <!-- ══════════════════════════════════════ -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Spot Information Card -->
+
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Categoría de Espacio           ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
+                <div class="bg-blue-50 rounded-3xl p-6 border border-blue-100 flex flex-col sm:flex-row items-center justify-between shadow-sm gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 {% if spot.spot_type == 'disability' %}bg-blue-600{% else %}bg-gray-300{% endif %} rounded-2xl flex items-center justify-center text-white shadow-inner transition-colors">
+                            <i class="fas fa-wheelchair text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 leading-tight">Categoría de Espacio</h4>
+                            <p class="text-xs font-black uppercase text-blue-600 tracking-tighter">
+                                {% if spot.spot_type == 'disability' %}
+                                    MOVILIDAD REDUCIDA / SERVICIOS
+                                {% else %}
+                                    ESTACIONAMIENTO REGULAR
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    {% if current_user.can_write('parking') %}
+                    <form action="{{ url_for('parking.toggle_disability_status', spot_id=spot.id) }}" method="POST">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-xs transition-all
+                            {% if spot.spot_type == 'disability' %}
+                                bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50
+                            {% else %}
+                                bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200
+                            {% endif %}">
+                            {% if spot.spot_type == 'disability' %}
+                                <i class="fas fa-undo mr-1"></i> VOLVER A REGULAR
+                            {% else %}
+                                <i class="fas fa-wheelchair mr-1"></i> MARCAR DISCAPACIDAD
+                            {% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Ocupación Actual               ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <i class="fas fa-id-card text-blue-500"></i> Ocupación Actual
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Dueño permanente -->
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                <i class="fas fa-user-shield mr-1"></i> Dueño Asignado
+                            </p>
+                            {% if spot.assigned_user %}
+                            <div class="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                                <div class="h-12 w-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-inner flex-shrink-0">
+                                    {{ spot.assigned_user.full_name[0] }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 truncate">{{ spot.assigned_user.full_name }}</p>
+                                    <p class="text-sm text-gray-500">
+                                        Unidad {{ spot.assigned_user.unit_number or 'N/A' }}
+                                    </p>
+                                    {% if spot.vehicle_plate %}
+                                    <p class="text-xs font-mono font-bold text-blue-600 mt-1">
+                                        <i class="fas fa-id-badge mr-1"></i>{{ spot.vehicle_plate }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                                <div class="h-12 w-12 bg-gray-200 rounded-2xl flex items-center justify-center text-gray-400 flex-shrink-0">
+                                    <i class="fas fa-user-slash"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-400">Sin dueño asignado</p>
+                                    <p class="text-sm text-gray-300">Espacio disponible</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Ocupante físico actual -->
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                                <i class="fas fa-car mr-1"></i> Ocupante Físico
+                            </p>
+                            {% if spot.is_physically_occupied %}
+                            <div class="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+                                <div class="h-12 w-12 bg-red-500 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-inner flex-shrink-0">
+                                    <i class="fas fa-car"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 truncate">
+                                        {{ spot.occupant_display_name or 'Desconocido' }}
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        {% if spot.occupied_by_id and spot.occupant %}
+                                            Residente
+                                        {% else %}
+                                            Visitante / Temporal
+                                        {% endif %}
+                                    </p>
+                                    {% if spot.occupied_at %}
+                                    <p class="text-xs text-red-400 mt-1">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Desde {{ spot.occupied_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="flex items-center gap-3 p-4 bg-green-50 rounded-2xl border border-green-100">
+                                <div class="h-12 w-12 bg-green-400 rounded-2xl flex items-center justify-center text-white flex-shrink-0">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-green-700">Vacío</p>
+                                    <p class="text-sm text-green-500">Nadie está en el espacio</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Alerta si hay conflicto (dueño + otro ocupante) -->
+                    {% if state == 'split' %}
+                    <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-exclamation-triangle text-amber-500 text-xl mt-0.5"></i>
+                            <div>
+                                <p class="font-bold text-amber-800">Espacio en uso por otra persona</p>
+                                <p class="text-sm text-amber-600 mt-1">
+                                    Este espacio pertenece a <strong>{{ spot.assigned_user.full_name }}</strong>
+                                    pero está siendo usado por <strong>{{ spot.occupant_display_name }}</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Información del Espacio        ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
-                        <h2 class="text-xl font-bold text-white">Información del Espacio</h2>
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-info-circle mr-2"></i>Información del Espacio
+                        </h2>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Spot Details -->
+                            <!-- Detalles del espacio -->
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Detalles del Espacio</h3>
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                                    Detalles del Espacio
+                                </h3>
                                 <div class="space-y-3">
                                     <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                         <span class="font-medium text-gray-600">Número:</span>
@@ -58,19 +244,48 @@
                                     </div>
                                     <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                         <span class="font-medium text-gray-600">Tipo:</span>
-                                        <span class="font-bold text-gray-900">{{ spot.spot_type }}</span>
+                                        <span class="font-bold text-gray-900">
+                                            {% if spot.spot_type == 'disability' %}
+                                                <i class="fas fa-wheelchair text-blue-500 mr-1"></i>Discapacidad
+                                            {% else %}
+                                                Regular
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                        <span class="font-medium text-gray-600">Estado Visual:</span>
+                                        <span class="inline-flex items-center gap-1.5">
+                                            {% if state == 'green' %}
+                                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                                <span class="font-bold text-emerald-700">Libre</span>
+                                            {% elif state == 'blue' %}
+                                                <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                                                <span class="font-bold text-blue-700">Asignado (ausente)</span>
+                                            {% elif state == 'red' %}
+                                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                                <span class="font-bold text-red-700">Ocupado (sin dueño)</span>
+                                            {% elif state == 'split' %}
+                                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-red-500"></span>
+                                                <span class="font-bold text-purple-700">Asignado + otro ocupante</span>
+                                            {% else %}
+                                                <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                                                <span class="font-bold text-gray-600">Inactivo</span>
+                                            {% endif %}
+                                        </span>
                                     </div>
                                     <div class="flex justify-between items-center py-2">
-                                        <span class="font-medium text-gray-600">Estado:</span>
-                                        <span class="font-bold text-gray-900">{{ spot.status }}</span>
+                                        <span class="font-medium text-gray-600">Posición:</span>
+                                        <span class="font-bold text-gray-900">
+                                            Fila {{ spot.row_index + 1 }}, Col {{ spot.col_index + 1 }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Assignment Details -->
+                            <!-- Datos del vehículo del dueño -->
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
-                                    Información de Asignación
+                                    Vehículo del Dueño
                                 </h3>
                                 {% if spot.assigned_user %}
                                 <div class="space-y-3">
@@ -84,13 +299,28 @@
                                     </div>
                                     <div class="flex justify-between items-center py-2 border-b border-gray-100">
                                         <span class="font-medium text-gray-600">Placa:</span>
-                                        <span class="font-bold text-gray-900">{{ spot.vehicle_plate or 'N/A' }}</span>
+                                        <span class="font-bold font-mono text-blue-600">{{ spot.vehicle_plate or 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                        <span class="font-medium text-gray-600">Marca:</span>
+                                        <span class="font-bold text-gray-900">{{ spot.vehicle_make or 'N/A' }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                        <span class="font-medium text-gray-600">Modelo:</span>
+                                        <span class="font-bold text-gray-900">{{ spot.vehicle_model or 'N/A' }}</span>
                                     </div>
                                     <div class="flex justify-between items-center py-2">
-                                        <span class="font-medium text-gray-600">Vehículo:</span>
+                                        <span class="font-medium text-gray-600">Color:</span>
                                         <span class="font-bold text-gray-900">
-                                            {{ spot.vehicle_make or '' }} {{ spot.vehicle_model or '' }} 
-                                            {% if spot.vehicle_color %}<span class="text-gray-600">({{ spot.vehicle_color }})</span>{% endif %}
+                                            {% if spot.vehicle_color %}
+                                                <span class="inline-flex items-center gap-1">
+                                                    <span class="w-3 h-3 rounded-full border border-gray-300" 
+                                                          style="background-color: {{ spot.vehicle_color }};"></span>
+                                                    {{ spot.vehicle_color }}
+                                                </span>
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
                                         </span>
                                     </div>
                                 </div>
@@ -99,8 +329,8 @@
                                     <div class="flex">
                                         <i class="fas fa-info-circle text-yellow-500 mt-1 mr-3"></i>
                                         <div>
-                                            <p class="text-yellow-800 font-medium">Espacio no asignado</p>
-                                            <p class="text-yellow-600 text-sm mt-1">Este espacio está disponible para asignación</p>
+                                            <p class="text-yellow-800 font-medium">Sin dueño asignado</p>
+                                            <p class="text-yellow-600 text-sm mt-1">Asigna un residente para registrar su vehículo</p>
                                         </div>
                                     </div>
                                 </div>
@@ -108,10 +338,12 @@
                             </div>
                         </div>
 
-                        <!-- Notes Section -->
+                        <!-- Notas -->
                         {% if spot.notes %}
                         <div class="mt-6 pt-6 border-t border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Notas</h3>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                                <i class="fas fa-sticky-note text-yellow-500 mr-2"></i>Notas
+                            </h3>
                             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                 <p class="text-gray-700">{{ spot.notes }}</p>
                             </div>
@@ -120,7 +352,9 @@
                     </div>
                 </div>
 
-                <!-- History Card -->
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Historial de Movimientos       ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4">
                         <h2 class="text-xl font-bold text-white flex items-center">
@@ -147,9 +381,23 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                                {% if log.action == 'assigned' %}bg-green-100 text-green-800
+                                                {% if log.action == 'assigned' %}bg-blue-100 text-blue-800
                                                 {% elif log.action == 'unassigned' %}bg-yellow-100 text-yellow-800
-                                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                {% elif log.action == 'occupied' %}bg-red-100 text-red-800
+                                                {% elif log.action == 'vacated' %}bg-green-100 text-green-800
+                                                {% elif log.action == 'reserved' %}bg-purple-100 text-purple-800
+                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {% if log.action == 'assigned' %}
+                                                    <i class="fas fa-user-plus mr-1"></i>
+                                                {% elif log.action == 'unassigned' %}
+                                                    <i class="fas fa-user-minus mr-1"></i>
+                                                {% elif log.action == 'occupied' %}
+                                                    <i class="fas fa-sign-in-alt mr-1"></i>
+                                                {% elif log.action == 'vacated' %}
+                                                    <i class="fas fa-sign-out-alt mr-1"></i>
+                                                {% elif log.action == 'reserved' %}
+                                                    <i class="fas fa-bookmark mr-1"></i>
+                                                {% endif %}
                                                 {{ log.action }}
                                             </span>
                                         </td>
@@ -176,56 +424,168 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Column -->
+            </div>
+            <!-- ══ FIN COLUMNA IZQUIERDA ══ -->
+
+            <!-- ══════════════════════════════════════ -->
+            <!-- COLUMNA DERECHA (1/3)                  -->
+            <!-- ══════════════════════════════════════ -->
             <div class="space-y-6">
-                <!-- Actions Card -->
+
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Acciones de Asignación         ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4">
-                        <h2 class="text-xl font-bold text-white">Acciones</h2>
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-tools mr-2"></i>Acciones
+                        </h2>
                     </div>
                     <div class="p-6 space-y-4">
+                        <!-- Volver -->
                         <a href="{{ url_for('parking.index') }}" 
                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 font-medium">
-                            <i class="fas fa-arrow-left mr-2"></i>Volver
+                            <i class="fas fa-arrow-left mr-2"></i>Volver al Mapa
                         </a>
 
                         {% if current_user.can_write('parking') %}
                             {% if spot.assigned_user %}
-                                <!-- ERROR CORREGIDO AQUÍ: faltaba el paréntesis de cierre en url_for -->
+                                <!-- Liberar dueño -->
                                 <form method="POST" action="{{ url_for('parking.unassign', spot_id=spot.id) }}" 
-                                      onsubmit="return confirm('¿Estás seguro de liberar este espacio?')">
+                                      onsubmit="return confirm('¿Estás seguro de quitar al dueño de este espacio?')">
                                     <button type="submit" 
                                             class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 font-medium">
-                                        <i class="fas fa-user-minus mr-2"></i>Liberar Espacio
+                                        <i class="fas fa-user-minus mr-2"></i>Quitar Dueño
                                     </button>
                                 </form>
-                            {% elif spot.status == 'available' %}
+                            {% else %}
+                                <!-- Asignar dueño -->
                                 <a href="{{ url_for('parking.assign', spot_id=spot.id) }}" 
-                                   class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium">
-                                    <i class="fas fa-user-plus mr-2"></i>Asignar a Residente
-                                </a>
-                                <a href="{{ url_for('parking.reserve_visitor', spot_id=spot.id) }}" 
                                    class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium">
-                                    <i class="fas fa-shuttle-van mr-2"></i>Reservar para Visita
+                                    <i class="fas fa-user-plus mr-2"></i>Asignar Dueño
                                 </a>
-                            {% elif spot.status == 'reserved' %}
-                                <form method="POST" action="{{ url_for('parking.unassign', spot_id=spot.id) }}">
-                                    <button type="submit" 
-                                            class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium">
-                                        <i class="fas fa-times-circle mr-2"></i>Cancelar Reserva
-                                    </button>
-                                </form>
                             {% endif %}
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Statistics Card -->
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Control de Ocupación Física    ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
+                {% if current_user.can_write('parking') %}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 px-6 py-4">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i class="fas fa-traffic-light mr-3"></i>Control de Ocupación
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        
+                        <!-- Estado actual -->
+                        <div class="mb-4 p-3 rounded-xl text-center
+                            {% if spot.is_physically_occupied %}
+                                bg-red-50 border border-red-200
+                            {% else %}
+                                bg-green-50 border border-green-200
+                            {% endif %}">
+                            
+                            {% if spot.is_physically_occupied %}
+                                <i class="fas fa-car text-red-500 text-xl mb-1"></i>
+                                <p class="text-sm font-bold text-red-700">ESPACIO OCUPADO</p>
+                                <p class="text-xs text-red-500">
+                                    Por: {{ spot.occupant_display_name or 'Desconocido' }}
+                                </p>
+                                {% if spot.occupied_at %}
+                                <p class="text-[10px] text-red-400 mt-1">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Desde: {{ spot.occupied_at.strftime('%d/%m/%Y %H:%M') }}
+                                </p>
+                                {% endif %}
+                            {% else %}
+                                <i class="fas fa-check-circle text-green-500 text-xl mb-1"></i>
+                                <p class="text-sm font-bold text-green-700">ESPACIO VACÍO</p>
+                                <p class="text-xs text-green-500">No hay vehículo</p>
+                            {% endif %}
+                        </div>
+
+                        {% if spot.is_physically_occupied %}
+                            <!-- ══ MARCAR SALIDA ══ -->
+                            <form method="POST" action="{{ url_for('parking.vacate_spot', spot_id=spot.id) }}"
+                                  onsubmit="return confirm('¿Confirmar que el vehículo salió?')">
+                                <button type="submit" 
+                                        class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Marcar Salida
+                                </button>
+                            </form>
+                        {% else %}
+                            <!-- ══ MARCAR ENTRADA ══ -->
+                            <form method="POST" action="{{ url_for('parking.occupy_spot', spot_id=spot.id) }}" 
+                                  x-data="{ type: 'visitor' }">
+                                
+                                <!-- Selector de tipo -->
+                                <div class="flex gap-2 mb-3">
+                                    <button type="button" 
+                                            @click="type = 'visitor'"
+                                            :class="type === 'visitor' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+                                            class="flex-1 py-2 rounded-lg text-xs font-bold transition-all">
+                                        <i class="fas fa-user mr-1"></i>Visita
+                                    </button>
+                                    <button type="button" 
+                                            @click="type = 'registered'"
+                                            :class="type === 'registered' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
+                                            class="flex-1 py-2 rounded-lg text-xs font-bold transition-all">
+                                        <i class="fas fa-users mr-1"></i>Residente
+                                    </button>
+                                </div>
+
+                                <input type="hidden" name="occupy_type" :value="type">
+
+                                <!-- Campo para visita -->
+                                <div x-show="type === 'visitor'" x-transition class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                                        Nombre del visitante
+                                    </label>
+                                    <input type="text" name="occupant_name" 
+                                           placeholder="Ej: Juan Pérez"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+
+                                <!-- Selector para residente -->
+                                <div x-show="type === 'registered'" x-transition class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                                        Seleccionar residente
+                                    </label>
+                                    <select name="occupant_user_id" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">-- Seleccionar --</option>
+                                        {% for user in users %}
+                                        <option value="{{ user.id }}">
+                                            {{ user.full_name }} 
+                                            {% if user.unit_number %}(Unidad {{ user.unit_number }}){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <button type="submit" 
+                                        class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Marcar Entrada
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ╔═══════════════════════════════╗ -->
+                <!-- ║ Estadísticas                   ║ -->
+                <!-- ╚═══════════════════════════════╝ -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="bg-gradient-to-r from-gray-700 to-gray-900 px-6 py-4">
-                        <h2 class="text-xl font-bold text-white">Estadísticas</h2>
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-chart-bar mr-2"></i>Estadísticas
+                        </h2>
                     </div>
                     <div class="p-6">
                         <div class="space-y-4">
@@ -244,15 +604,36 @@
                                     <i class="fas fa-calendar-alt text-green-600 text-xl mr-3"></i>
                                     <div>
                                         <p class="text-sm text-gray-600">Última actualización</p>
-                                        <p class="text-lg font-bold text-gray-900">{{ spot.updated_at.strftime('%d/%m/%Y') }}</p>
+                                        <p class="text-lg font-bold text-gray-900">
+                                            {{ spot.updated_at.strftime('%d/%m/%Y') }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
+
+                            {% if spot.has_owner %}
+                            <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-user-check text-purple-600 text-xl mr-3"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Dueño</p>
+                                        <p class="text-lg font-bold text-gray-900">
+                                            {{ spot.assigned_user.full_name }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
+
             </div>
+            <!-- ══ FIN COLUMNA DERECHA ══ -->
+
         </div>
+        <!-- ══ FIN GRID PRINCIPAL ══ -->
+
     </div>
 </div>
 {% endblock %}

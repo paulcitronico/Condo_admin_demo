@@ -2,82 +2,230 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <!-- ═══════════════════════════════════ -->
+    <!-- HEADER                              -->
+    <!-- ═══════════════════════════════════ -->
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Mapa de Estacionamientos</h1>
-            <p class="text-gray-500">Haz clic en un espacio para gestionar o asignar.</p>
+            <p class="text-gray-500">Gestión visual: usa el <i class="fas fa-bolt text-amber-500"></i> para cambios rápidos.</p>
         </div>
         
         <div class="flex gap-3">
-            <a href="{{ url_for('parking.create') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center">
-                <i class="fas fa-plus-circle mr-2"></i> Añadir Espacio
+            <a href="{{ url_for('parking.create') }}" 
+               class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center">
+                <i class="fas fa-th mr-2"></i> Configurar Grilla
             </a>
-            
-            <button onclick="window.print()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50">
+            <button onclick="window.print()" 
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50">
                 <i class="fas fa-print mr-2"></i>Imprimir
             </button>
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════ -->
+    <!-- LEYENDA DE COLORES                  -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6">
+        <div class="flex flex-wrap gap-6 items-center">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Leyenda:</span>
+            
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-emerald-500 border-2 border-emerald-600"></div>
+                <span class="text-sm text-gray-600">Libre</span>
+                {% if stats.green is defined %}
+                <span class="text-xs bg-emerald-100 text-emerald-700 px-1.5 rounded-full font-bold">{{ stats.green }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-blue-600 border-2 border-blue-700"></div>
+                <span class="text-sm text-gray-600">Asignado (dueño ausente)</span>
+                {% if stats.blue is defined %}
+                <span class="text-xs bg-blue-100 text-blue-700 px-1.5 rounded-full font-bold">{{ stats.blue }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-red-500 border-2 border-red-600"></div>
+                <span class="text-sm text-gray-600">Ocupado (sin dueño)</span>
+                {% if stats.red is defined %}
+                <span class="text-xs bg-red-100 text-red-700 px-1.5 rounded-full font-bold">{{ stats.red }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md border-2 border-gray-300 overflow-hidden flex">
+                    <div class="w-1/2 bg-blue-600"></div>
+                    <div class="w-1/2 bg-red-500"></div>
+                </div>
+                <span class="text-sm text-gray-600">Asignado + ocupado por otro</span>
+                {% if stats.split is defined %}
+                <span class="text-xs bg-purple-100 text-purple-700 px-1.5 rounded-full font-bold">{{ stats.split }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- FILTRO DE PISOS                     -->
+    <!-- ═══════════════════════════════════ -->
     <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
         <a href="{{ url_for('parking.index', floor='all') }}" 
-           class="px-4 py-2 rounded-lg {% if current_floor == 'all' %}bg-blue-600 text-white{% else %}bg-white text-gray-600{% endif %}">Todos</a>
-        {% for f in floors %}
-        <a href="{{ url_for('parking.index', floor=f) }}" 
-           class="px-4 py-2 rounded-lg {% if current_floor == f|string %}bg-blue-600 text-white{% else %}bg-white text-gray-600{% endif %}">Piso {{ f }}</a>
+           class="px-4 py-2 rounded-lg {% if current_floor == 'all' %}bg-blue-600 text-white{% else %}bg-white text-gray-600 border{% endif %} font-medium">
+            Todos
+        </a>
+        {% for floor in floors %}
+        <a href="{{ url_for('parking.index', floor=floor) }}" 
+           class="px-4 py-2 rounded-lg {% if current_floor == floor %}bg-blue-600 text-white{% else %}bg-white text-gray-600 border{% endif %} font-medium">
+            Piso {{ floor }}
+        </a>
         {% endfor %}
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {% for spot in spots %}
-        <div class="relative group">
-            <a href="{{ url_for('parking.spot_detail', spot_id=spot.id) }}" 
-               class="block p-4 rounded-2xl shadow-sm transition-transform hover:scale-105 text-white h-full
-               {% if spot.status == 'occupied' %} bg-rose-500 
-               {% elif spot.assigned_user_id %} bg-sky-500 
-               {% elif spot.status == 'available' %} bg-emerald-500 
-               {% elif spot.status == 'reserved' %} bg-amber-500 
-               {% else %} bg-gray-500 {% endif %}">
+    <!-- ═══════════════════════════════════ -->
+    <!-- GRILLA DE ESTACIONAMIENTOS          -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="bg-gray-200 p-6 md:p-10 rounded-[3rem] shadow-inner border-[14px] border-gray-300 overflow-x-auto">
+        <div class="grid gap-4" style="grid-template-columns: repeat({{ max_cols if max_cols else 1 }}, 120px); width: max-content;">
+            
+            {% for spot in spots %}
+            
+            {# Determinar el estado visual #}
+            {% set state = spot.visual_state %}
+            
+            <div class="relative group" style="width: 120px; height: 120px;">
                 
-                <div class="flex justify-between items-start">
-                    <i class="fas {% if spot.spot_type == 'disabled' %}fa-wheelchair{% else %}fa-car{% endif %} opacity-50"></i>
-                    <span class="text-[10px] font-bold bg-black/20 px-2 py-0.5 rounded">PISO {{ spot.floor }}</span>
+                {# Badge de discapacidad #}
+                {% if spot.spot_type == 'disability' %}
+                <div class="absolute top-2 left-2 z-10 bg-white text-blue-600 px-1.5 py-0.5 rounded-lg shadow-sm border border-blue-100">
+                    <i class="fas fa-wheelchair text-[10px]"></i>
                 </div>
+                {% endif %}
 
-                <div class="text-center my-4">
-                    <span class="text-3xl font-black">{{ spot.spot_number }}</span>
-                    <div class="text-[10px] opacity-80 font-bold uppercase">{{ spot.status }}</div>
-                </div>
+                {# Botón rápido ⚡ #}
+                {% if current_user.can_write('parking') %}
+                <form action="{{ url_for('parking.toggle_status', spot_id=spot.id) }}" method="POST" 
+                      class="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="submit" 
+                            class="bg-white/90 hover:bg-white p-2 rounded-lg text-gray-800 shadow-md border border-gray-200" 
+                            title="Alternar ocupación">
+                        <i class="fas fa-bolt text-amber-500 text-xs"></i>
+                    </button>
+                </form>
+                {% endif %}
 
-                <div class="text-[10px] uppercase font-bold border-t border-white/20 pt-2 truncate">
-    {% if spot.assigned_user %}
-        <i class="fas fa-user mr-1"></i> {{ spot.assigned_user.last_name }}
-    {% elif spot.status == 'occupied' %}
-        <i class="fas fa-moped mr-1"></i> Ocupado (Manual)
-    {% elif spot.status == 'reserved' %}
-        <i class="fas fa-clock mr-1"></i> Reservado
-    {% else %}
-        <i class="fas fa-unlock mr-1"></i> Disponible
-    {% endif %}
-</div>
-            </a>
+                {# ══════════════════════════════════ #}
+                {# CASO SPLIT: Mitad Azul / Rojo     #}
+                {# ══════════════════════════════════ #}
+                {% if state == 'split' %}
+                <a href="{{ url_for('parking.spot_detail', spot_id=spot.id) }}" 
+                   class="flex flex-col items-center justify-between py-4 px-2 h-full w-full rounded-2xl border-b-4 border-blue-800 transition-all shadow-md relative overflow-hidden">
+                    
+                    {# Fondo dividido #}
+                    <div class="absolute inset-0 flex rounded-2xl overflow-hidden">
+                        <div class="w-1/2 bg-blue-600"></div>
+                        <div class="w-1/2 bg-red-500"></div>
+                    </div>
+                    
+                    {# Línea divisoria #}
+                    <div class="absolute inset-y-0 left-1/2 w-0.5 bg-white/30 z-[1]"></div>
+                    
+                    {# Contenido #}
+                    <div class="relative z-[2] flex flex-col items-center justify-between h-full w-full text-white">
+                        <span class="text-[9px] font-black uppercase opacity-60 tracking-widest">{{ spot.sector }}</span>
+                        
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-user-shield text-lg opacity-70" title="Dueño: {{ spot.assigned_user.full_name }}"></i>
+                            <i class="fas fa-car text-lg" title="Ocupado por: {{ spot.occupant_display_name }}"></i>
+                        </div>
+                        
+                        <div class="flex flex-col items-center">
+                            <div class="text-xs font-black bg-black/20 px-2 rounded-full">
+                                {{ spot.spot_number.split('-')[-1] }}
+                            </div>
+                            <span class="text-[8px] font-bold truncate w-24 text-center mt-0.5 opacity-80">
+                                👤 {{ spot.assigned_user.last_name }}
+                            </span>
+                            <span class="text-[8px] font-bold truncate w-24 text-center text-red-200">
+                                🚗 {{ spot.occupant_display_name or 'Temporal' }}
+                            </span>
+                        </div>
+                    </div>
 
-            {% if current_user.can_write('parking') %}
-            <form action="{{ url_for('parking.toggle_status', spot_id=spot.id) }}" method="POST" 
-                  class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button type="submit" class="bg-white/20 hover:bg-white/40 p-2 rounded-lg text-white backdrop-blur-sm" 
-                        title="Cambiar estado rápido (Ocupar/Liberar)">
-                    <i class="fas fa-bolt text-xs"></i>
-                </button>
-            </form>
-            {% endif %}
+                    {# Hover #}
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-[3]">
+                        <span class="text-[10px] font-bold bg-white text-black px-2 py-1 rounded shadow-xl">DETALLES</span>
+                    </div>
+                </a>
+
+                {# ══════════════════════════════════ #}
+                {# CASOS DE UN SOLO COLOR             #}
+                {# ══════════════════════════════════ #}
+                {% else %}
+                <a href="{{ url_for('parking.spot_detail', spot_id=spot.id) }}" 
+                   class="flex flex-col items-center justify-between py-4 px-2 h-full w-full rounded-2xl border-b-4 transition-all shadow-md relative overflow-hidden
+                   {% if state == 'green' %}
+                       bg-emerald-500 border-emerald-700 text-white hover:bg-emerald-400
+                   {% elif state == 'blue' %}
+                       bg-blue-600 border-blue-800 text-white hover:bg-blue-500
+                   {% elif state == 'red' %}
+                       bg-red-500 border-red-700 text-white hover:bg-red-400
+                   {% else %}
+                       bg-gray-400 border-gray-600 text-gray-100
+                   {% endif %}">
+                    
+                    <span class="text-[9px] font-black uppercase opacity-60 tracking-widest">{{ spot.sector }}</span>
+                    
+                    {# Ícono según estado #}
+                    {% if state == 'green' %}
+                        <i class="fas fa-unlock text-3xl"></i>
+                    {% elif state == 'blue' %}
+                        <i class="fas fa-user-shield text-3xl opacity-70"></i>
+                    {% elif state == 'red' %}
+                        <i class="fas fa-car text-3xl"></i>
+                    {% else %}
+                        <i class="fas fa-ban text-3xl"></i>
+                    {% endif %}
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="text-xs font-black bg-black/10 px-2 rounded-full">
+                            {{ spot.spot_number.split('-')[-1] }}
+                        </div>
+                        
+                        {% if state == 'blue' and spot.assigned_user %}
+                        <span class="text-[9px] font-bold truncate w-24 text-center mt-1">
+                            {{ spot.assigned_user.last_name }}
+                        </span>
+                        <span class="text-[8px] opacity-60">ausente</span>
+                        {% elif state == 'red' %}
+                        <span class="text-[9px] font-bold truncate w-24 text-center mt-1 text-red-100">
+                            {{ spot.occupant_display_name or 'En uso' }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {# Hover #}
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="text-[10px] font-bold bg-white text-black px-2 py-1 rounded shadow-xl">DETALLES</span>
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+            
+            {% else %}
+            <div class="col-span-full text-center py-20 bg-white/50 rounded-3xl border-2 border-dashed border-gray-400">
+                <p class="text-gray-500 font-medium">No hay espacios. Usa "Configurar Grilla".</p>
+            </div>
+            {% endfor %}
         </div>
-        {% else %}
-        <div class="col-span-full text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-            <i class="fas fa-car-slash text-4xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500 font-medium">No se encontraron espacios en este piso.</p>
-        </div>
-        {% endfor %}
     </div>
 </div>
+
+<style>
+    .overflow-x-auto::-webkit-scrollbar { height: 12px; }
+    .overflow-x-auto::-webkit-scrollbar-track { background: #d1d5db; border-radius: 10px; }
+    .overflow-x-auto::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 10px; border: 3px solid #d1d5db; }
+</style>
 {% endblock %}
