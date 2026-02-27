@@ -1,0 +1,86 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Boleta de Pago #{{ transaction.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto my-8 p-8 bg-white shadow-lg border border-gray-200 rounded-lg" id="printable-area">
+    <div class="flex justify-between items-start border-b-2 border-blue-600 pb-6 mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 uppercase tracking-wider">Comprobante de Pago</h1>
+            <p class="text-gray-500">CondoAdmin Pro - Administración de Condominios</p>
+            <p class="text-sm text-gray-400">Fecha de emisión: {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+        <div class="text-right">
+            <div class="bg-blue-600 text-white px-4 py-2 rounded mb-2 inline-block">
+                <span class="text-sm uppercase font-bold text-blue-100">Folio:</span>
+                <span class="text-xl font-mono">#{{ "%06d" | format(transaction.id) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-8 mb-8">
+        <div>
+            <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Datos del Residente</h3>
+            <p class="text-lg font-bold text-gray-800">{{ transaction.account.user.first_name }} {{ transaction.account.user.last_name }}</p>
+            <p class="text-gray-600">Unidad: <span class="font-semibold">{{ transaction.account.unit_number }}</span></p>
+            <p class="text-gray-600">{{ transaction.account.user.email }}</p>
+        </div>
+        <div class="text-right border-l pl-8">
+            <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Detalle del Pago</h3>
+            <p class="text-gray-600">Fecha de Pago: <span class="text-gray-800 font-semibold">{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</span></p>
+            <p class="text-gray-600">Categoría: <span class="text-gray-800 font-semibold capitalize">{{ transaction.category.replace('_', ' ') }}</span></p>
+            {% if transaction.reference_number %}
+            <p class="text-gray-600">Referencia: <span class="text-gray-800 font-semibold">{{ transaction.reference_number }}</span></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <table class="w-full mb-8">
+        <thead>
+            <tr class="bg-gray-100 text-left">
+                <th class="py-3 px-4 text-gray-700 font-bold uppercase text-sm">Descripción del Concepto</th>
+                <th class="py-3 px-4 text-gray-700 font-bold uppercase text-sm text-right">Monto Pagado</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            <tr>
+                <td class="py-4 px-4 text-gray-800">
+                    {{ transaction.description or 'Pago de servicios/gastos comunes' }}
+                    <p class="text-xs text-gray-500 mt-1 italic">Período: {{ transaction.period_month }}/{{ transaction.period_year }}</p>
+                </td>
+                <td class="py-4 px-4 text-right text-xl font-bold text-green-600">
+                    ${{ "{:,.2f}".format(transaction.amount) }}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-12 pt-8 border-t border-gray-100 flex justify-between items-end">
+        <div class="text-sm text-gray-500">
+            <p>Registrado por: <span class="font-semibold">{{ transaction.created_by.first_name }} {{ transaction.created_by.last_name }}</span></p>
+            <p class="mt-4">Gracias por su pago oportuno.</p>
+        </div>
+        <div class="w-48 border-t border-gray-400 text-center pt-2">
+            <p class="text-xs text-gray-400 uppercase">Firma / Timbre Admin</p>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-3xl mx-auto flex justify-center space-x-4 mb-12 print:hidden">
+    <button onclick="window.print()" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg flex items-center transition">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Imprimir Boleta
+    </button>
+    <a href="{{ url_for('financials.accounts') }}" class="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition">
+        Volver a Cuentas
+    </a>
+</div>
+
+<style>
+@media print {
+    body * { visibility: hidden; }
+    #printable-area, #printable-area * { visibility: visible; }
+    #printable-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; }
+}
+</style>
+{% endblock %}
