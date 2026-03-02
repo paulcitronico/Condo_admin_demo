@@ -312,16 +312,16 @@ def view_voucher(transaction_id):
                            now=datetime.now())
 
 def get_financial_overview():
-    current_month = datetime.now().month
-    current_year = datetime.now().year
+    # Eliminamos el uso de current_month y current_year para esta suma
+    
+    # NUEVA CONSULTA: Suma absolutamente todos los pagos de tipo 'payment'
     total_collected = db.session.query(
         func.sum(FinancialTransaction.amount)
     ).filter(
-        FinancialTransaction.transaction_type == 'payment',
-        FinancialTransaction.period_month == current_month,
-        FinancialTransaction.period_year == current_year
+        FinancialTransaction.transaction_type == 'payment'
     ).scalar() or Decimal('0.00')
 
+    # Mantienes tu lógica de deuda como la tienes actualmente
     outstanding = db.session.query(
         func.sum(FinancialAccount.total_owed - FinancialAccount.total_paid)
     ).scalar() or Decimal('0.00')

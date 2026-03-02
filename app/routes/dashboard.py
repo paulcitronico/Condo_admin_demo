@@ -28,22 +28,17 @@ def index():
 
 
 def get_financial_stats():
-    """Obtiene estadísticas financieras"""
+    """Obtiene estadísticas financieras totales e históricas"""
     if not current_user.can_read('financials'):
         return None
     
-    # Total recaudado este mes
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-    
+    # ELIMINAMOS el filtro de mes y año actual para que cuente todo lo registrado
     total_collected = db.session.query(func.sum(FinancialTransaction.amount)).filter(
         FinancialTransaction.transaction_type == 'payment',
-        FinancialTransaction.period_month == current_month,
-        FinancialTransaction.period_year == current_year,
         FinancialTransaction.status == 'completed'
     ).scalar() or 0
     
-    # Balance pendiente total
+    # Balance pendiente total (se mantiene igual según tu preferencia)
     total_pending = db.session.query(func.sum(FinancialAccount.total_owed - FinancialAccount.total_paid)).filter(
         FinancialAccount.total_owed > FinancialAccount.total_paid
     ).scalar() or 0
