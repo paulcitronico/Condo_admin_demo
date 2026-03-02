@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CondoAdmin Pro{% endblock %}</title>
     
-    <!-- En la sección <head>, añade: -->
+    <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
@@ -28,165 +28,196 @@
 <body class="h-full">
     <div class="min-h-full">
         {% if current_user.is_authenticated %}
-        <!-- Navbar -->
-        <nav class="bg-blue-600" x-data="{ mobileMenuOpen: false }">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex h-16 items-center justify-between">
-            <!-- Logo (siempre visible) -->
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <span class="text-white text-xl font-bold">
-                        <i class="fas fa-building"></i> CondoAdmin Pro
-                    </span>
-                </div>
-            </div>
-
-            <!-- Botón menú hamburguesa (solo móvil) -->
-            <div class="flex md:hidden">
-                <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="text-white hover:bg-blue-700 p-2 rounded-md">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Menú de escritorio (visible en md en adelante) -->
-            <div class="hidden md:block">
-                <div class="ml-10 flex items-baseline space-x-4">
-                    <a href="{{ url_for('dashboard.index') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-dashboard"></i> Dashboard
-                    </a>
-                    
-                    {% if current_user.can_read('roles') %}
-                    <a href="{{ url_for('roles.users') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-users-cog"></i> Roles
-                    </a>
-                    {% endif %}
-                    
-                    {% if current_user.can_read('bookings') %}
-                    <a href="{{ url_for('bookings.index') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-calendar-check"></i> Reservas
-                    </a>
-                    {% endif %}
-                    
-                    {% if current_user.can_read('parking') %}
-                    <a href="{{ url_for('parking.index') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-car"></i> Estacionamiento
-                    </a>
-                    {% endif %}
-                    
-                    {% if current_user.can_read('financials') %}
-                    <a href="{{ url_for('financials.index') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-dollar-sign"></i> Finanzas
-                    </a>
-                    {% endif %}
-                    
-                    {% if current_user.can_read('announcements') %}
-                    <a href="{{ url_for('announcements.index') }}" 
-                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-bullhorn"></i> Comunicados
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Info de usuario y logout (escritorio) -->
-            <div class="hidden md:block">
-                <div class="ml-4 flex items-center md:ml-6">
-                    <div class="relative ml-3">
+            <!-- ========== NAVBAR SUPERIOR (solo móvil) ========== -->
+            <nav class="bg-blue-600 md:hidden" x-data="{ mobileMenuOpen: false }">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div class="flex h-16 items-center justify-between">
+                        <!-- Logo -->
                         <div class="flex items-center">
-                            <span class="text-white text-sm mr-3">
-                                {{ current_user.full_name }}
-                                <span class="text-blue-200 text-xs block">{{ current_user.role.display_name }}</span>
-                            </span>
-                            <a href="{{ url_for('auth.logout') }}" 
-                               class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm">
-                                <i class="fas fa-sign-out-alt"></i> Salir
+                            <div class="flex-shrink-0">
+                                <span class="text-white text-xl font-bold">
+                                    <i class="fas fa-building"></i> CondoAdmin Pro
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Botón menú hamburguesa -->
+                        <div class="flex md:hidden">
+                            <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="text-white hover:bg-blue-700 p-2 rounded-md">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Menú desplegable móvil -->
+                    <div x-show="mobileMenuOpen" 
+                         @click.away="mobileMenuOpen = false"
+                         class="md:hidden pt-4 pb-3 border-t border-blue-500">
+                        <div class="space-y-1 px-2">
+                            <a href="{{ url_for('dashboard.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-dashboard"></i> Dashboard
+                            </a>
+                            
+                            {% if current_user.can_read('roles') %}
+                            <a href="{{ url_for('roles.users') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-users-cog"></i> Roles
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('bookings') %}
+                            <a href="{{ url_for('bookings.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-calendar-check"></i> Reservas
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('parking') %}
+                            <a href="{{ url_for('parking.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-car"></i> Estacionamiento
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('financials') %}
+                            <a href="{{ url_for('financials.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-dollar-sign"></i> Finanzas
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('announcements') %}
+                            <a href="{{ url_for('announcements.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-bullhorn"></i> Comunicados
+                            </a>
+                            {% endif %}
+
+                            <a href="{{ url_for('contacts.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-phone"></i> Contactos
+                            </a>
+
+                            <a href="{{ url_for('rules.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-book"></i> Normativas
+                            </a>
+                        </div>
+
+                        <!-- Información de usuario y logout para móvil -->
+                        <div class="mt-4 px-2 border-t border-blue-500 pt-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <span class="text-white text-sm font-medium">{{ current_user.full_name }}</span>
+                                    <span class="text-blue-200 text-xs block">{{ current_user.role.display_name }}</span>
+                                </div>
+                                <div class="ml-auto">
+                                    <a href="{{ url_for('auth.logout') }}" 
+                                       @click="mobileMenuOpen = false"
+                                       class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm">
+                                        <i class="fas fa-sign-out-alt"></i> Salir
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- ========== BARRA LATERAL (solo desktop) ========== -->
+            <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-blue-600">
+                <div class="flex-1 flex flex-col min-h-0">
+                    <!-- Logo -->
+                    <div class="flex items-center h-16 flex-shrink-0 px-4 bg-blue-700">
+                        <span class="text-white text-xl font-bold">
+                            <i class="fas fa-building"></i> CondoAdmin Pro
+                        </span>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="flex-1 flex flex-col overflow-y-auto">
+                        <nav class="flex-1 px-2 py-4 space-y-1">
+                            <a href="{{ url_for('dashboard.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-dashboard mr-3"></i> Dashboard
+                            </a>
+                            
+                            {% if current_user.can_read('roles') %}
+                            <a href="{{ url_for('roles.users') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-users-cog mr-3"></i> Roles
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('bookings') %}
+                            <a href="{{ url_for('bookings.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-calendar-check mr-3"></i> Reservas
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('parking') %}
+                            <a href="{{ url_for('parking.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-car mr-3"></i> Estacionamiento
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('financials') %}
+                            <a href="{{ url_for('financials.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-dollar-sign mr-3"></i> Finanzas
+                            </a>
+                            {% endif %}
+                            
+                            {% if current_user.can_read('announcements') %}
+                            <a href="{{ url_for('announcements.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-bullhorn mr-3"></i> Comunicados
+                            </a>
+                            {% endif %}
+
+                            <a href="{{ url_for('contacts.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-phone mr-3"></i> Contactos
+                            </a>
+
+                            <a href="{{ url_for('rules.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-book mr-3"></i> Normativas
+                            </a>
+                        </nav>
+                    </div>
+
+                    <!-- Usuario y logout (fijos abajo) -->
+                    <div class="flex-shrink-0 flex border-t border-blue-500 p-4">
+                        <div class="flex items-center w-full">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-white">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-blue-200">{{ current_user.role.display_name }}</p>
+                            </div>
+                            <a href="{{ url_for('auth.logout') }}" class="text-white hover:bg-blue-700 p-2 rounded-md">
+                                <i class="fas fa-sign-out-alt"></i>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Menú desplegable para móvil -->
-        <div x-show="mobileMenuOpen" 
-             @click.away="mobileMenuOpen = false"
-             class="md:hidden pt-4 pb-3 border-t border-blue-500">
-            <!-- Enlaces de navegación -->
-            <div class="space-y-1 px-2">
-                <a href="{{ url_for('dashboard.index') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-dashboard"></i> Dashboard
-                </a>
-                
-                {% if current_user.can_read('roles') %}
-                <a href="{{ url_for('roles.users') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-users-cog"></i> Roles
-                </a>
-                {% endif %}
-                
-                {% if current_user.can_read('bookings') %}
-                <a href="{{ url_for('bookings.index') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-calendar-check"></i> Reservas
-                </a>
-                {% endif %}
-                
-                {% if current_user.can_read('parking') %}
-                <a href="{{ url_for('parking.index') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-car"></i> Estacionamiento
-                </a>
-                {% endif %}
-                
-                {% if current_user.can_read('financials') %}
-                <a href="{{ url_for('financials.index') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-dollar-sign"></i> Finanzas
-                </a>
-                {% endif %}
-                
-                {% if current_user.can_read('announcements') %}
-                <a href="{{ url_for('announcements.index') }}" 
-                   @click="mobileMenuOpen = false"
-                   class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-bullhorn"></i> Comunicados
-                </a>
-                {% endif %}
-            </div>
-
-            <!-- Información de usuario y logout para móvil -->
-            <div class="mt-4 px-2 border-t border-blue-500 pt-4">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <span class="text-white text-sm font-medium">{{ current_user.full_name }}</span>
-                        <span class="text-blue-200 text-xs block">{{ current_user.role.display_name }}</span>
-                    </div>
-                    <div class="ml-auto">
-                        <a href="{{ url_for('auth.logout') }}" 
-                           @click="mobileMenuOpen = false"
-                           class="text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm">
-                            <i class="fas fa-sign-out-alt"></i> Salir
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</nav>
+            <!-- ========== CONTENEDOR PRINCIPAL (con margen izquierdo en desktop) ========== -->
+            <div class="md:ml-64">
         {% endif %}
 
-        <!-- Flash Messages -->
+        <!-- Flash Messages (siempre visibles, pero dentro del contenedor con margen si está autenticado) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -224,14 +255,18 @@
             {% endif %}
         {% endwith %}
 
-        <!-- Page Content -->
+        <!-- Page Content (único bloque content) -->
         <main>
             {% block content %}{% endblock %}
         </main>
+
+        {% if current_user.is_authenticated %}
+            </div> <!-- Cierre del div md:ml-64 -->
+        {% endif %}
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     {% block extra_js %}{% endblock %}
 </body>

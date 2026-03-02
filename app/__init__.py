@@ -46,7 +46,7 @@ def create_app(config_name='default'):
         return dict(now=datetime.now)
     
     # Registrar blueprints
-    from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements
+    from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements, contacts, rules
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
     app.register_blueprint(roles.bp)
@@ -54,6 +54,8 @@ def create_app(config_name='default'):
     app.register_blueprint(parking.bp)
     app.register_blueprint(financials.bp)
     app.register_blueprint(announcements.bp)
+    app.register_blueprint(contacts.bp)
+    app.register_blueprint(rules.bp)
 
     
     # Crear tablas si no existen

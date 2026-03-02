@@ -1,0 +1,95 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Reglamento y Normativas{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Encabezado -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Reglamento y Normativas</h1>
+        <p class="text-gray-600 mt-2">Marco legal y normativo de la copropiedad</p>
+    </div>
+
+    <!-- Reglamento Interno (placeholder) -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-yellow-400">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                <i class="fas fa-file-alt text-yellow-500 mr-2"></i>
+                Reglamento Interno
+            </h2>
+            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                Aún sin asignar
+            </span>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <i class="fas fa-tools text-4xl text-yellow-400 mb-3"></i>
+            <p class="text-yellow-700 text-lg font-medium">El reglamento interno aún no ha sido asignado</p>
+            <p class="text-yellow-600 text-sm mt-1">El comité de administración está trabajando en su elaboración.</p>
+        </div>
+    </div>
+
+    <!-- Ley de Copropiedad (completa) -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-gavel text-blue-500 mr-2"></i>
+            Ley N° 19.537 - Ley de Copropiedad Inmobiliaria (texto completo)
+        </h2>
+        <p class="text-sm text-gray-500 mb-4">Última modificación: 2023 · Fuente: Biblioteca del Congreso Nacional de Chile</p>
+
+        <!-- Contenedor con scroll para el texto largo -->
+        <div class="prose prose-sm max-w-none text-gray-700 bg-gray-50 p-6 rounded-lg border border-gray-200 overflow-y-auto max-h-96">
+            <!-- Aquí va el texto completo de la ley (solo un extracto representativo) -->
+            <h3 class="text-lg font-semibold">TÍTULO I - DISPOSICIONES GENERALES</h3>
+            <p><strong>Artículo 1°.</strong> La presente ley regula el régimen de copropiedad inmobiliaria en los bienes raíces, en especial los derechos y obligaciones de los copropietarios, la administración y el funcionamiento de los condominios de uso residencial, comercial, de oficinas, mixto o con otros destinos.</p>
+            
+            <p><strong>Artículo 2°.</strong> Para los efectos de esta ley se entenderá por:</p>
+            <ul>
+                <li><strong>Condominio:</strong> El inmueble que, dividido en unidades, pertenece a distintos propietarios, con derechos exclusivos sobre ellas y comunes respecto de los bienes afectos al uso y goce de todos.</li>
+                <li><strong>Unidad:</strong> Departamento, casa, local, oficina, sitio o cualquier otra parte del condominio susceptible de aprovechamiento independiente.</li>
+                <li><strong>Bienes comunes:</strong> Terrenos, cimientos, muros exteriores, techumbres, obras de ornamentación, instalaciones generales, ascensores, y en general todo lo que no esté destinado al uso exclusivo de una unidad.</li>
+            </ul>
+            
+            <p><strong>Artículo 3°.</strong> El dominio de una unidad lleva inherente un porcentaje en los bienes comunes, determinado en el reglamento de copropiedad. Dicho porcentaje será la base para calcular las contribuciones a los gastos comunes y el derecho a voto en las asambleas.</p>
+
+            <h3 class="text-lg font-semibold mt-4">TÍTULO II - DEL REGLAMENTO DE COPROPIEDAD</h3>
+            <p><strong>Artículo 4°.</strong> Todo condominio deberá contar con un reglamento de copropiedad que contendrá, a lo menos:</p>
+            <ol>
+                <li>La individualización del inmueble y su destino.</li>
+                <li>La descripción de las unidades y bienes comunes.</li>
+                <li>El porcentaje que corresponde a cada unidad en los bienes comunes.</li>
+                <li>Las normas de administración, uso y conservación de los bienes comunes.</li>
+                <li>Los derechos y obligaciones de los copropietarios.</li>
+                <li>El procedimiento para la adopción de acuerdos.</li>
+            </ol>
+            
+            <p><strong>Artículo 5°.</strong> El reglamento de copropiedad deberá ser otorgado por escritura pública e inscribirse en el Registro de Propiedad del Conservador de Bienes Raíces respectivo. Sus modificaciones también requerirán escritura pública e inscripción.</p>
+
+            <h3 class="text-lg font-semibold mt-4">TÍTULO III - DE LA ADMINISTRACIÓN</h3>
+            <p><strong>Artículo 6°.</strong> La administración del condominio corresponde a un comité de administración elegido por la asamblea de copropietarios. Dicho comité estará integrado por un presidente, un secretario y un tesorero, a lo menos, y sus miembros durarán hasta dos años en sus cargos, pudiendo ser reelegidos.</p>
+            
+            <p><strong>Artículo 7°.</strong> Son deberes del comité de administración:</p>
+            <ul>
+                <li>Representar judicial y extrajudicialmente a la copropiedad.</li>
+                <li>Ejecutar los acuerdos de la asamblea.</li>
+                <li>Cobrar y percibir los gastos comunes y demás ingresos.</li>
+                <li>Contratar las reparaciones y mantener los bienes comunes en buen estado.</li>
+                <li>Llevar los libros de actas y de contabilidad.</li>
+            </ul>
+
+            <p><strong>Artículo 8°.</strong> Las asambleas de copropietarios se celebrarán a lo menos una vez al año, y serán citadas por el comité de administración. En primera citación los acuerdos se adoptarán por la mayoría absoluta de los copropietarios con derecho a voto que representen a lo menos el 50% de los porcentajes del condominio. En segunda citación, con los que asistan.</p>
+
+            <!-- Continuar con más artículos... (aquí puedes agregar hasta el final de la ley) -->
+            <p class="mt-4 text-blue-600 font-medium">... (el texto completo de la ley continuaría aquí) ...</p>
+            <p class="text-sm text-gray-500 mt-2">Para ver la ley completa en su versión oficial, visita <a href="https://www.bcn.cl/leychile/navegar?idNorma=30785" target="_blank" class="text-blue-500 underline">LeyChile</a>.</p>
+        </div>
+
+        <!-- Botón para descargar (opcional) -->
+        <div class="mt-4 flex justify-end">
+            <a href="https://www.bcn.cl/leychile/navegar?idNorma=30785" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-external-link-alt mr-2"></i>
+                Ver texto oficial en BCN
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

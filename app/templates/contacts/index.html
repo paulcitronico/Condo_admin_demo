@@ -1,0 +1,145 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Contactos Directiva
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos adicionales si son necesarios */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Encabezado -->
+    <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Directiva del Condominio</h1>
+        <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            Ponte en contacto con los miembros de la directiva vía WhatsApp
+        </p>
+    </div>
+
+    <!-- Grid de tarjetas -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Tarjeta 1: Presidente -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-100 rounded-full p-3">
+                        <i class="fas fa-user-tie text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">David Oñate</h3>
+                        <p class="text-sm text-gray-600">Presidente</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-phone-alt text-gray-400 mr-2"></i>
+                        <span>+569 78334019</span>
+                    </div>
+                    <a href="https://wa.me/56978334019?text=Hola%20Presidente%2C%20necesito%20informaci%C3%B3n" 
+                       target="_blank" 
+                       class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta 2: Vicepresidente -->
+        
+
+        <!-- Tarjeta 3: Secretario Administracion-->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-100 rounded-full p-3">
+                        <i class="fas fa-user-tie text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Solange Rebolledo</h3>
+                        <p class="text-sm text-gray-600">Secretaria Administración</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-phone-alt text-gray-400 mr-2"></i>
+                        <span>+569 27345764</span>
+                    </div>
+                    <a href="https://wa.me/56927345764?text=Hola%20Secretaria%2C%20necesito%20informaci%C3%B3n" 
+                       target="_blank" 
+                       class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta 3: Secretario -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-100 rounded-full p-3">
+                        <i class="fas fa-user-tie text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Jean Paul Pacheco</h3>
+                        <p class="text-sm text-gray-600">Secretario Comite de Vivienda</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-phone-alt text-gray-400 mr-2"></i>
+                        <span>+569 89096758</span>
+                    </div>
+                    <a href="https://wa.me/56989096758?text=Hola%20Secretario%2C%20necesito%20informaci%C3%B3n" 
+                       target="_blank" 
+                       class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta 4: Tesorero -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <div class="p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-blue-100 rounded-full p-3">
+                        <i class="fas fa-user-tie text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Javier Intenso</h3>
+                        <p class="text-sm text-gray-600">Tesorero</p>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-phone-alt text-gray-400 mr-2"></i>
+                        <span>+569 31265626</span>
+                    </div>
+                    <a href="https://wa.me/56931265626?text=Hola%20Tesorero%2C%20necesito%20informaci%C3%B3n" 
+                       target="_blank" 
+                       class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>   
+    
+</div>
+<!-- Encabezado -->
+    <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold text-gray-900 sm:text-4xl">Encargados Torres</h1>
+        <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            Ponte en contacto con los delegados de cada torre  vía WhatsApp
+        </p>
+    </div> 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Si se necesita algún script adicional
+</script>
+{% endblock %}
