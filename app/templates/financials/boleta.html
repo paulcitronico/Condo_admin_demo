@@ -74,6 +74,12 @@
     <a href="{{ url_for('financials.accounts') }}" class="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition">
         Volver a Cuentas
     </a>
+    <!-- Enlace para compartir la boleta -->
+    <a href="https://wa.me/?text=Hola, aquí está la boleta de pago: https://jl2flq77-5000.brs.devtunnels.ms/financials/receipt/{{ transaction.id }}" 
+       target="_blank" 
+       class="inline-flex items-center px-6 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition">
+        Compartir Boleta por WhatsApp
+    </a>
 </div>
 
 <style>
