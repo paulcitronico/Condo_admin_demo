@@ -13,10 +13,12 @@
         </div>
         
         <div class="flex gap-3">
+            {% if  current_user.role.name != 'resident' %}
             <a href="{{ url_for('parking.create') }}" 
                class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center">
                 <i class="fas fa-th mr-2"></i> Configurar Grilla
             </a>
+            {% endif %}
             <button onclick="window.print()" 
                     class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50">
                 <i class="fas fa-print mr-2"></i>Imprimir

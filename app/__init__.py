@@ -120,7 +120,7 @@ def init_default_data():
             'name': 'board_member',
             'display_name': 'Miembro de Directiva',
             'description': 'Supervisión y aprobaciones',
-            'permissions': {'roles': 1, 'bookings': 1, 'parking': 1, 'financials': 2, 'announcements': 2}
+            'permissions': {'roles': 1, 'bookings': 2, 'parking': 1, 'financials': 2, 'announcements': 2}
         },
         {
             'name': 'resident',

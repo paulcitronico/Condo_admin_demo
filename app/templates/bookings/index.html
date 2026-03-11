@@ -90,7 +90,7 @@ Reserva de Espacios Comunes - {{ month|month_name }} {{ year }}
         <p class="text-gray-500 mt-1">Gestiona y visualiza el uso de los espacios comunes del edificio.</p>
     </div>
     <div class="flex gap-3">
-        {% if current_user.can_write('bookings') %}
+        {% if current_user.can_write('bookings') and current_user.role.name != 'resident' %}
         <a href="{{ url_for('bookings.facilities_list') }}" 
            class="inline-flex items-center bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl font-medium shadow-sm hover:bg-gray-50 transition-all">
             <i class="fas fa-cog mr-2"></i> Gestionar Instalaciones

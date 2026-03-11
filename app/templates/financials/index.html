@@ -12,12 +12,14 @@
                 <p class="text-gray-600">Resumen general y estadísticas del mes.</p>
             </div>
             <div class="flex flex-wrap gap-3">
+                {% if  current_user.role.name != 'resident' %}
                 <a href="{{ url_for('financials.accounts') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
                     <i class="fas fa-university mr-2 text-indigo-500"></i> Ver Cuentas
                 </a>
                 <a href="{{ url_for('financials.add_transaction') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 shadow-sm transition-all">
                     <i class="fas fa-plus mr-2"></i> Nueva Transacción
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -136,6 +138,7 @@
                     </div>
                 </div>
 
+                {% if  current_user.role.name != 'resident' %}
                 <div class="bg-indigo-900 rounded-xl p-6 text-white shadow-lg">
                     <h3 class="text-lg font-bold mb-4">Pagos de Servicios</h3>
                     <div class="space-y-4">
@@ -152,6 +155,7 @@
                     <a href="{{ url_for('financials.services') }}" class="inline-flex items-center text-xs font-bold text-white hover:text-indigo-200 mt-4 transition-colors">
                         Ver todos los servicios <i class="fas fa-arrow-right ml-2"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
 
