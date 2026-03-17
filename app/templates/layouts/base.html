@@ -111,6 +111,12 @@
                                class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
                                 <i class="fas fa-book"></i> Normativas
                             </a>
+
+                            <a href="{{ url_for('paqueteria.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-box-open"></i> Paqueteria
+                            </a>
                         </div>
 
                         <!-- Información de usuario y logout para móvil -->
@@ -189,6 +195,14 @@
                             <a href="{{ url_for('contacts.index') }}" 
                                class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                 <i class="fas fa-phone mr-3"></i> Contactos
+                            </a>
+
+                            <a href="{{ url_for('paqueteria.index') }}" 
+                               class="flex items-center px-4 py-3 text-gray-600 hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-all group {% if request.endpoint == 'paqueteria.index' %}bg-orange-50 text-orange-600{% endif %}">
+                                <div class="w-8 h-8 flex items-center justify-center rounded-lg {% if request.endpoint == 'paqueteria.index' %}bg-orange-500 text-white shadow-md{% else %}bg-gray-100 text-gray-500 group-hover:bg-orange-500 group-hover:text-white{% endif %} mr-3 transition-all">
+                                    <i class="fas fa-box-open text-sm"></i>
+                                </div>
+                                <span class="font-medium text-sm">Paquetería</span>
                             </a>
 
                             <a href="{{ url_for('rules.index') }}" 

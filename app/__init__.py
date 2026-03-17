@@ -47,6 +47,8 @@ def create_app(config_name='default'):
     
     # Registrar blueprints
     from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements, contacts, rules
+    from app.routes.paqueteria import bp as paqueteria_bp
+    app.register_blueprint(paqueteria_bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
     app.register_blueprint(roles.bp)

@@ -1,0 +1,204 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Paquetería y Encomiendas{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+<div class="min-h-screen bg-gray-50 p-4 md:p-6" x-data="{ 
+    showLlegadaModal: false, 
+    showRetiroModal: false, 
+    paqueteActivo: null 
+}">
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex items-center">
+                <i class="fas fa-box-open text-3xl text-orange-500 mr-4"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Recepción de Paquetería</h1>
+                    <p class="text-gray-600">Gestión de encomiendas y correspondencia</p>
+                </div>
+            </div>
+            <button @click="showLlegadaModal = true" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-xl shadow-md transition-colors flex items-center">
+                <i class="fas fa-plus mr-2"></i> Registrar Llegada
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center justify-between">
+                    <span><i class="fas fa-clock text-orange-500 mr-2"></i> Por Retirar</span>
+                    <span class="bg-orange-100 text-orange-800 text-xs py-1 px-2 rounded-full">{{ pendientes|length }}</span>
+                </h2>
+                
+                {% if pendientes %}
+                    <div class="space-y-4">
+                        {% for p in pendientes %}
+                        <div class="p-4 border border-orange-100 bg-orange-50 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase font-bold">{{ p.proveedor_paquete }}</p>
+                                <p class="text-lg font-bold text-gray-900 leading-tight">Para: {{ p.destinatario }}</p>
+                                <p class="text-sm text-gray-600 mt-1"><i class="fas fa-calendar-alt mr-1"></i> Llegó: {{ p.hora_llegada.strftime('%d/%m %H:%M') }}</p>
+                                {% if p.tipo != 'No frágil' %}
+                                    <span class="inline-block mt-2 bg-red-100 text-red-700 text-xs px-2 py-1 rounded font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> {{ p.tipo }}</span>
+                                {% endif %}
+                            </div>
+                            <!-- 🔹 Botón modificado: pasa el ID del paquete a través de data-paquete-id y llama a initSignaturePad con ese valor -->
+                            <button @click="showRetiroModal = true; initSignaturePad($el.dataset.paqueteId);" 
+                                    data-paquete-id="{{ p.id }}"
+                                    class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-colors">
+                                Entregar
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-check-circle text-4xl mb-3 text-gray-200"></i>
+                        <p>No hay paquetes pendientes.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">
+                    <i class="fas fa-history text-gray-400 mr-2"></i> Últimos Entregados
+                </h2>
+                
+                <div class="overflow-y-auto max-h-[600px] pr-2 space-y-3">
+                    {% for e in entregados %}
+                    <div class="p-3 border border-gray-100 rounded-lg bg-gray-50 flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">{{ e.destinatario }}</p>
+                            <p class="text-xs text-gray-500">Retiró: {{ e.persona_retira }} ({{ e.hora_retiro.strftime('%d/%m %H:%M') }})</p>
+                        </div>
+                        {% if e.firma %}
+                            <img src="{{ e.firma }}" alt="Firma" class="h-8 w-20 object-contain bg-white border border-gray-200 rounded">
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        <p class="text-center text-gray-400 py-4">No hay historial de entregas recientes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Modal: Registrar llegada -->
+        <div x-show="showLlegadaModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" x-cloak style="display: none;">
+            <div @click.away="showLlegadaModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-orange-500 p-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Registrar Nuevo Paquete</h3>
+                    <button @click="showLlegadaModal = false" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+                </div>
+                <form action="{{ url_for('paqueteria.registrar_llegada') }}" method="POST" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Empresa / Repartidor</label>
+                        <input type="text" name="proveedor_paquete" placeholder="Ej: Chilexpress, MercadoLibre, etc." required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Destinatario (Depto / Nombre)</label>
+                        <input type="text" name="destinatario" placeholder="Ej: Depto 402 - Juan Pérez" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Tipo de Paquete</label>
+                        <select name="tipo" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500">
+                            <option value="Normal">Normal</option>
+                            <option value="Caja Grande">Caja Grande</option>
+                            <option value="Frágil">Frágil</option>
+                            <option value="Alimentos">Alimentos / Delivery</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition mt-4">Guardar Paquete</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal: Retiro con firma -->
+        <div x-show="showRetiroModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" x-cloak style="display: none;">
+            <div @click.away="showRetiroModal = false" class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+                <div class="bg-green-500 p-4 text-white flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Firma de Retiro</h3>
+                    <button @click="showRetiroModal = false" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <!-- 🔹 Formulario modificado: el action se define dinámicamente con JavaScript, onsubmit llama a prepararFirma -->
+                <form id="formRetiro" method="POST" onsubmit="return prepararFirma(event)">
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Nombre de quien retira</label>
+                            <input type="text" name="persona_retira" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Firma (Dibuje aquí)</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 touch-none">
+                                <canvas id="signature-pad" class="w-full h-40 rounded-lg cursor-crosshair"></canvas>
+                            </div>
+                            <div class="text-right mt-1">
+                                <button type="button" onclick="signaturePad.clear()" class="text-xs text-red-500 hover:underline">Borrar y firmar de nuevo</button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="firma_data" id="firma_data">
+
+                        <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition mt-2">
+                            Confirmar Entrega
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let signaturePad;
+
+    function initSignaturePad(paqueteId) {
+        // Pequeño retraso para asegurar que el canvas esté disponible
+        setTimeout(() => {
+            const canvas = document.getElementById('signature-pad');
+            if (!canvas) {
+                console.error('Canvas no encontrado');
+                return;
+            }
+
+            // Ajustar resolución del canvas (alta calidad)
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+
+            if (!signaturePad) {
+                signaturePad = new SignaturePad(canvas, {
+                    penColor: "rgb(0, 0, 0)",
+                    backgroundColor: "rgb(249, 250, 251)"
+                });
+            } else {
+                signaturePad.clear();
+            }
+
+            // Establecer la acción del formulario usando la URL generada por Flask
+            const form = document.getElementById('formRetiro');
+            // Usamos una URL base con el placeholder '0' que será reemplazado por el ID real
+            const baseUrl = "{{ url_for('paqueteria.registrar_retiro', paquete_id=0) }}";
+            form.action = baseUrl.replace('0', paqueteId);
+        }, 200);
+    }
+
+    function prepararFirma(event) {
+        if (signaturePad.isEmpty()) {
+            event.preventDefault();
+            alert("Por favor, el residente debe firmar en el recuadro antes de entregar el paquete.");
+            return false;
+        }
+        // Guardar la firma en el campo oculto
+        document.getElementById('firma_data').value = signaturePad.toDataURL();
+        return true; // Permite el envío normal del formulario
+    }
+</script>
+{% endblock %}
