@@ -1,4 +1,3 @@
-# app/routes/parking.py
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
@@ -28,9 +27,9 @@ def index():
     max_cols = max([s.col_index for s in spots]) + 1 if spots else 1
 
     # Estadísticas mejoradas
-    all_spots = ParkingSpot.query.filter_by(is_active=True)
+    all_spots = ParkingSpot.query.filter_by(is_active=True).all()
     stats = {
-        'total': all_spots.count(),
+        'total': len(all_spots),
         'green': sum(1 for s in all_spots if s.visual_state == 'green'),
         'blue': sum(1 for s in all_spots if s.visual_state == 'blue'),
         'red': sum(1 for s in all_spots if s.visual_state == 'red'),
@@ -40,9 +39,14 @@ def index():
     floors = db.session.query(ParkingSpot.floor).distinct().all()
     floors = sorted([f[0] for f in floors if f[0]])
 
-    return render_template('parking/index.html', 
-                         spots=spots, stats=stats, floors=floors, 
-                         current_floor=floor_filter, max_cols=max_cols)
+    return render_template(
+        'parking/index.html',
+        spots=spots,
+        stats=stats,
+        floors=floors,
+        current_floor=floor_filter,
+        max_cols=max_cols
+    )
 
 
 # ═══════════════════════════════════════════════════════
@@ -68,14 +72,16 @@ def create():
                     if not ParkingSpot.query.filter_by(spot_number=spot_number).first():
                         new_spot = ParkingSpot(
                             spot_number=spot_number,
-                            floor=floor, sector=sector,
-                            row_index=r, col_index=c,
+                            floor=floor,
+                            sector=sector,
+                            row_index=r,
+                            col_index=c,
                             status='available'
                         )
                         db.session.add(new_spot)
             
             db.session.commit()
-            flash(f'Grilla creada con éxito', 'success')
+            flash('Grilla creada con éxito', 'success')
             return redirect(url_for('parking.index'))
         except Exception as e:
             db.session.rollback()
@@ -95,7 +101,7 @@ def spot_detail(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
     logs = spot.logs.order_by(ParkingLog.created_at.desc()).limit(20).all()
     
-    # Usuarios para el formulario de ocupar (si es necesario)
+    # Usuarios para el formulario de ocupar
     users = User.query.filter_by(is_active=True).order_by(User.last_name).all()
     
     return render_template('parking/detail.html', spot=spot, logs=logs, users=users)
@@ -110,12 +116,14 @@ def spot_detail(spot_id):
 @require_permission('parking', level=2)
 def toggle_disability_status(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
+
     if spot.spot_type == 'disability':
         spot.spot_type = 'regular'
         flash(f'Espacio {spot.spot_number} ahora es Regular', 'success')
     else:
         spot.spot_type = 'disability'
         flash(f'Espacio {spot.spot_number} marcado para Discapacidad', 'info')
+
     db.session.commit()
     return redirect(url_for('parking.spot_detail', spot_id=spot.id))
 
@@ -143,6 +151,25 @@ def assign(spot_id):
         
         spot.assign_to_user(user, vehicle_data)
         spot.notes = request.form.get('notes')
+        
+        # Horario de disponibilidad
+        has_restriction = request.form.get('has_time_restriction') == '1'
+        spot.has_time_restriction = has_restriction
+
+        if has_restriction:
+            available_from = request.form.get('available_from')
+            available_until = request.form.get('available_until')
+
+            if available_from and available_until:
+                from datetime import time
+                spot.available_from = time.fromisoformat(available_from)
+                spot.available_until = time.fromisoformat(available_until)
+            else:
+                spot.available_from = None
+                spot.available_until = None
+        else:
+            spot.available_from = None
+            spot.available_until = None
         
         # Registrar quién hizo la asignación
         log = ParkingLog.query.filter_by(
@@ -198,7 +225,7 @@ def unassign(spot_id):
 
 
 # ═══════════════════════════════════════════════════════
-# NUEVO: OCUPAR ESPACIO (el guardia marca entrada)
+# OCUPAR ESPACIO (el guardia marca entrada)
 # ═══════════════════════════════════════════════════════
 
 @bp.route('/spot/<int:spot_id>/occupy', methods=['POST'])
@@ -206,42 +233,68 @@ def unassign(spot_id):
 @require_permission('parking', level=2)
 def occupy_spot(spot_id):
     spot = ParkingSpot.query.get_or_404(spot_id)
-    
-    if spot.is_physically_occupied or spot.under_maintenance:
-        flash('El espacio no está disponible para ocupación.', 'warning')
+
+    # Refrescar desde DB para evitar datos obsoletos
+    db.session.refresh(spot)
+
+    # Validaciones base
+    if spot.is_physically_occupied:
+        flash('El espacio ya está ocupado.', 'warning')
         return redirect(url_for('parking.spot_detail', spot_id=spot.id))
-    
+
+    if spot.under_maintenance:
+        flash('El espacio no está disponible porque está fuera de servicio.', 'warning')
+        return redirect(url_for('parking.spot_detail', spot_id=spot.id))
+
     occupy_type = request.form.get('occupy_type', 'visitor')
-    
-    # Datos comunes para ambos tipos (Dueño externo o Visita)
     patente = request.form.get('patente_externa', '').strip().upper()
     rut = request.form.get('rut_externo', '').strip()
-    
+
+    occupant_user_id = None
+    is_owner_entering = False
+
+    # Determinar si quien entra es el dueño asignado
     if occupy_type == 'registered':
-        user_id = request.form.get('occupant_user_id', type=int)
-        if user_id:
-            spot.occupy(
-                occupant_user_id=user_id,
-                performed_by=current_user,
-                patente=patente,
-                rut=rut
-            )
-        else:
+        occupant_user_id = request.form.get('occupant_user_id', type=int)
+
+        if not occupant_user_id:
             flash('Selecciona un residente', 'warning')
             return redirect(url_for('parking.spot_detail', spot_id=spot.id))
+
+        if spot.assigned_user_id == occupant_user_id:
+            is_owner_entering = True
+
+    # Restricción horaria:
+    # solo bloquea a terceros, NO al dueño del estacionamiento
+    if (
+        spot.has_owner and
+        spot.has_time_restriction and
+        not spot.is_available_now and
+        not is_owner_entering
+    ):
+        flash('Este espacio no está disponible en este horario.', 'warning')
+        return redirect(url_for('parking.spot_detail', spot_id=spot.id))
+
+    # Registrar ocupación
+    if occupy_type == 'registered':
+        spot.occupy(
+            occupant_user_id=occupant_user_id,
+            performed_by=current_user,
+            patente=patente,
+            rut=rut
+        )
     else:
-        # Visita con datos completos del vehículo
         name = request.form.get('occupant_name', '').strip()
+
         if not name:
             flash('Ingresa el nombre del visitante', 'warning')
             return redirect(url_for('parking.spot_detail', spot_id=spot.id))
-        
-        # Guardamos datos del vehículo temporalmente en el spot para que el panel los muestre
+
         spot.vehicle_plate = patente
         spot.vehicle_make = request.form.get('vehicle_make')
         spot.vehicle_model = request.form.get('vehicle_model')
         spot.vehicle_color = request.form.get('vehicle_color')
-        
+
         spot.occupy(
             occupant_name=name,
             performed_by=current_user,
@@ -255,7 +308,7 @@ def occupy_spot(spot_id):
 
 
 # ═══════════════════════════════════════════════════════
-# NUEVO: DESOCUPAR ESPACIO (el guardia marca salida)
+# DESOCUPAR ESPACIO (el guardia marca salida)
 # ═══════════════════════════════════════════════════════
 
 @bp.route('/spot/<int:spot_id>/vacate', methods=['POST'])
@@ -336,8 +389,9 @@ def toggle_status(spot_id):
     db.session.commit()
     return redirect(url_for('parking.index'))
 
+
 # ═══════════════════════════════════════════════════════
-# estacionamiento en mantencion o fuera de servicio
+# MANTENIMIENTO
 # ═══════════════════════════════════════════════════════
 
 @bp.route('/spot/<int:spot_id>/maintenance', methods=['POST'])

@@ -1,5 +1,4 @@
-# app/models/parking.py
-from datetime import datetime
+from datetime import datetime, time
 from app import db
 from app.models.user import User
 
@@ -21,9 +20,9 @@ class ParkingSpot(db.Model):
     status = db.Column(db.String(20), default='available', index=True)
     
     # ═══════════════════════════════════════════════════════
-    # ESTADO DE MANTENIMIENTO (NUEVO)
+    # ESTADO DE MANTENIMIENTO
     # ═══════════════════════════════════════════════════════
-    under_maintenance = db.Column(db.Boolean, default=False) # Fix para AttributeError
+    under_maintenance = db.Column(db.Boolean, default=False)
 
     # ═══════════════════════════════════════════════════════
     # DUEÑO PERMANENTE
@@ -57,6 +56,13 @@ class ParkingSpot(db.Model):
     vehicle_make = db.Column(db.String(50))
     vehicle_model = db.Column(db.String(50))
     vehicle_color = db.Column(db.String(30))
+    
+    # ═══════════════════════════════════════════════════════
+    # HORARIO DE DISPONIBILIDAD (NUEVO)
+    # ═══════════════════════════════════════════════════════
+    available_from = db.Column(db.Time, nullable=True)
+    available_until = db.Column(db.Time, nullable=True)
+    has_time_restriction = db.Column(db.Boolean, default=False)
     
     notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
@@ -106,6 +112,18 @@ class ParkingSpot(db.Model):
             return 'red'       # Visita en espacio libre
         else:
             return 'green'     # Libre
+
+    @property
+    def is_available_now(self):
+        if not self.has_owner or not self.has_time_restriction:
+            return True
+        if not self.available_from or not self.available_until:
+            return True
+        now = datetime.now().time()  # Hora local del servidor
+        if self.available_from <= self.available_until:
+            return self.available_from <= now <= self.available_until
+        else:
+            return now >= self.available_from or now <= self.available_until
         
     # ═══════════════════════════════════════════════════════
     # MÉTODOS DE ACCIÓN

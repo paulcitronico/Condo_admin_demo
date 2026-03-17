@@ -4,10 +4,11 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import config
 from datetime import datetime
+import pytz  # <-- Añadido para manejo de zona horaria
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
-
 
 
 def create_app(config_name='default'):
@@ -26,9 +27,7 @@ def create_app(config_name='default'):
     login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
     login_manager.login_message_category = 'info'
     
-    # *** AÑADE AQUÍ LOS FILTROS Y CONTEXT PROCESSOR ***
-    from datetime import datetime
-    
+    # ========== FILTROS Y CONTEXT PROCESSORS ==========
     @app.template_filter('month_name')
     def month_name_filter(month_number):
         months = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -40,6 +39,18 @@ def create_app(config_name='default'):
         if not text:
             return ''
         return text.replace('\n', '<br>')
+
+    # NUEVO FILTRO: Convierte UTC a la hora local configurada
+    @app.template_filter('localtime')
+    def localtime_filter(utc_dt):
+        if utc_dt is None:
+            return ''
+        tz = pytz.timezone(app.config['TIMEZONE'])
+        # Si la fecha es naive (sin zona), asumimos UTC
+        if utc_dt.tzinfo is None:
+            utc_dt = pytz.utc.localize(utc_dt)
+        local_dt = utc_dt.astimezone(tz)
+        return local_dt.strftime('%d/%m/%Y %H:%M')
 
     @app.context_processor
     def utility_processor():
@@ -59,7 +70,6 @@ def create_app(config_name='default'):
     app.register_blueprint(contacts.bp)
     app.register_blueprint(rules.bp)
 
-    
     # Crear tablas si no existen
     with app.app_context():
         db.create_all()
@@ -72,8 +82,6 @@ def create_app(config_name='default'):
     def inject_now():
         # Esto permite usar {{ now }} en cualquier HTML
         return {'now': datetime.utcnow()}
-    
-    
     
     return app
 
