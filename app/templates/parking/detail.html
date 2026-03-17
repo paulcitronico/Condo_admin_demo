@@ -45,21 +45,23 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- INDICADOR VISUAL DE COLOR (barra superior) -->
         <!-- ═══════════════════════════════════════════ -->
-        {% set state = spot.visual_state %}
-        <div class="mb-6 rounded-2xl overflow-hidden h-3 shadow-inner
-            {% if state == 'split' %}flex{% endif %}">
-            {% if state == 'green' %}
-                <div class="h-full w-full bg-emerald-500"></div>
-            {% elif state == 'blue' %}
-                <div class="h-full w-full bg-blue-600"></div>
-            {% elif state == 'red' %}
-                <div class="h-full w-full bg-red-500"></div>
-            {% elif state == 'split' %}
-                <div class="h-full w-1/2 bg-blue-600"></div>
-                <div class="h-full w-1/2 bg-red-500"></div>
-            {% else %}
-                <div class="h-full w-full bg-gray-400"></div>
-            {% endif %}
+        <div class="flex items-center gap-2">
+            {% set state = spot.visual_state %}
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
+                {% if state == 'purple' %}bg-purple-100 text-purple-800
+                {% elif state == 'green' %}bg-emerald-100 text-emerald-800
+                {% elif state == 'blue' %}bg-blue-100 text-blue-800
+                {% elif state == 'red' %}bg-red-100 text-red-800
+                {% elif state == 'split' %}bg-indigo-100 text-indigo-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                <i class="fas fa-circle mr-2 text-xs"></i>
+                {% if state == 'purple' %}FUERA DE SERVICIO
+                {% elif state == 'green' %}DISPONIBLE
+                {% elif state == 'blue' %}DUEÑO AUSENTE
+                {% elif state == 'red' %}OCUPADO (VISITA)
+                {% elif state == 'split' %}DUEÑO + VISITA
+                {% else %}INACTIVO{% endif %}
+            </span>
         </div>
 
         <!-- ═══════════════════════════════════════════ -->
@@ -153,7 +155,7 @@
                             {% endif %}
                         </div>
 
-                        <!-- Ocupante físico actual -->
+                        <!-- Ocupante físico actual -->                       
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                                 <i class="fas fa-car mr-1"></i> Ocupante Físico
@@ -182,6 +184,49 @@
                                     {% endif %}
                                 </div>
                             </div>
+                        
+                            <!-- 📌 NUEVO: Detalles adicionales del visitante -->
+                            {% if not spot.occupied_by_id %}
+                            <div class="mt-3 p-4 bg-gray-50 rounded-xl border border-gray-200 text-sm space-y-2">
+                                <p class="font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                                    <i class="fas fa-id-card text-gray-500"></i> Datos del visitante
+                                </p>
+                                {% if spot.rut_externo %}
+                                <div class="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                                    <span class="text-gray-500">RUT:</span>
+                                    <span class="font-mono font-medium">{{ spot.rut_externo }}</span>
+                                </div>
+                                {% endif %}
+                                {% if spot.patente_externa or spot.vehicle_plate %}
+                                <div class="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                                    <span class="text-gray-500">Patente:</span>
+                                    <span class="font-mono font-medium">{{ spot.patente_externa or spot.vehicle_plate }}</span>
+                                </div>
+                                {% endif %}
+                                {% if spot.vehicle_make %}
+                                <div class="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                                    <span class="text-gray-500">Marca:</span>
+                                    <span>{{ spot.vehicle_make }}</span>
+                                </div>
+                                {% endif %}
+                                {% if spot.vehicle_model %}
+                                <div class="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                                    <span class="text-gray-500">Modelo:</span>
+                                    <span>{{ spot.vehicle_model }}</span>
+                                </div>
+                                {% endif %}
+                                {% if spot.vehicle_color %}
+                                <div class="flex justify-between py-1 border-b border-gray-100 last:border-0">
+                                    <span class="text-gray-500">Color:</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="w-3 h-3 rounded-full border border-gray-300" style="background-color: {{ spot.vehicle_color }};"></span>
+                                        {{ spot.vehicle_color }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        
                             {% else %}
                             <div class="flex items-center gap-3 p-4 bg-green-50 rounded-2xl border border-green-100">
                                 <div class="h-12 w-12 bg-green-400 rounded-2xl flex items-center justify-center text-white flex-shrink-0">
@@ -281,6 +326,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
 
                             <!-- Datos del vehículo del dueño -->
                             <div>
@@ -466,6 +512,20 @@
                                     <i class="fas fa-user-plus mr-2"></i>Asignar Dueño
                                 </a>
                             {% endif %}
+                            <div class="mt-6 pt-6 border-t border-gray-100">
+    <form action="{{ url_for('parking.toggle_maintenance', spot_id=spot.id) }}" method="POST">
+        <button type="submit" 
+            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all
+            {% if spot.under_maintenance %}
+                bg-green-100 text-green-700 hover:bg-green-200
+            {% else %}
+                bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-200
+            {% endif %}">
+            <i class="fas fa-tools"></i>
+            {{ "HABILITAR ESTACIONAMIENTO" if spot.under_maintenance else "PONER FUERA DE SERVICIO" }}
+        </button>
+    </form>
+</div>
                         {% endif %}
                     </div>
                 </div>
@@ -542,13 +602,19 @@
                                 <input type="hidden" name="occupy_type" :value="type">
 
                                 <!-- Campo para visita -->
-                                <div x-show="type === 'visitor'" x-transition class="mb-3">
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">
-                                        Nombre del visitante
-                                    </label>
-                                    <input type="text" name="occupant_name" 
-                                           placeholder="Ej: Juan Pérez"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div x-show="type === 'visitor'" x-transition class="space-y-4 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                    <input type="text" name="occupant_name" placeholder="Nombre completo del visitante" class="w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" name="rut_externo" placeholder="RUT (ej: 12.345.678-9)" class="w-full px-4 py-3 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500">
+                                                                
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <input type="text" name="patente_externa" placeholder="PATENTE" class="px-4 py-3 rounded-xl border-gray-200 uppercase font-mono">
+                                        <input type="text" name="vehicle_make" placeholder="Marca (ej: Toyota)" class="px-4 py-3 rounded-xl border-gray-200">
+                                        <input type="text" name="vehicle_model" placeholder="Modelo (ej: Corolla)" class="px-4 py-3 rounded-xl border-gray-200">
+                                        <div class="flex items-center gap-2 px-4 py-2 border rounded-xl bg-white">
+                                            <label class="text-xs text-gray-500">Color:</label>
+                                            <input type="color" name="vehicle_color" value="#3b82f6" class="h-8 w-full cursor-pointer">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Selector para residente -->

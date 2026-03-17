@@ -205,41 +205,52 @@ def unassign(spot_id):
 @login_required
 @require_permission('parking', level=2)
 def occupy_spot(spot_id):
-    """El guardia marca que alguien ENTRÓ al espacio"""
     spot = ParkingSpot.query.get_or_404(spot_id)
     
-    # Verificar que no esté ya ocupado
-    if spot.is_physically_occupied:
-        flash('Este espacio ya está ocupado', 'warning')
+    if spot.is_physically_occupied or spot.under_maintenance:
+        flash('El espacio no está disponible para ocupación.', 'warning')
         return redirect(url_for('parking.spot_detail', spot_id=spot.id))
     
-    # ¿Es un usuario registrado o una visita?
     occupy_type = request.form.get('occupy_type', 'visitor')
+    
+    # Datos comunes para ambos tipos (Dueño externo o Visita)
+    patente = request.form.get('patente_externa', '').strip().upper()
+    rut = request.form.get('rut_externo', '').strip()
     
     if occupy_type == 'registered':
         user_id = request.form.get('occupant_user_id', type=int)
         if user_id:
             spot.occupy(
                 occupant_user_id=user_id,
-                performed_by=current_user
+                performed_by=current_user,
+                patente=patente,
+                rut=rut
             )
         else:
-            flash('Selecciona un usuario', 'warning')
+            flash('Selecciona un residente', 'warning')
             return redirect(url_for('parking.spot_detail', spot_id=spot.id))
     else:
-        # Visita: solo nombre
+        # Visita con datos completos del vehículo
         name = request.form.get('occupant_name', '').strip()
         if not name:
             flash('Ingresa el nombre del visitante', 'warning')
             return redirect(url_for('parking.spot_detail', spot_id=spot.id))
         
+        # Guardamos datos del vehículo temporalmente en el spot para que el panel los muestre
+        spot.vehicle_plate = patente
+        spot.vehicle_make = request.form.get('vehicle_make')
+        spot.vehicle_model = request.form.get('vehicle_model')
+        spot.vehicle_color = request.form.get('vehicle_color')
+        
         spot.occupy(
             occupant_name=name,
-            performed_by=current_user
+            performed_by=current_user,
+            patente=patente,
+            rut=rut
         )
     
     db.session.commit()
-    flash(f'Espacio {spot.spot_number} marcado como ocupado', 'info')
+    flash(f'Espacio {spot.spot_number} ocupado correctamente', 'success')
     return redirect(url_for('parking.spot_detail', spot_id=spot.id))
 
 
@@ -324,3 +335,34 @@ def toggle_status(spot_id):
     
     db.session.commit()
     return redirect(url_for('parking.index'))
+
+# ═══════════════════════════════════════════════════════
+# estacionamiento en mantencion o fuera de servicio
+# ═══════════════════════════════════════════════════════
+
+@bp.route('/spot/<int:spot_id>/maintenance', methods=['POST'])
+@login_required
+@require_permission('parking', level=2)
+def toggle_maintenance(spot_id):
+    spot = ParkingSpot.query.get_or_404(spot_id)
+    
+    # Cambiar el switch
+    spot.under_maintenance = not spot.under_maintenance
+    
+    # Si se pone en mantenimiento, nos aseguramos de que esté libre
+    if spot.under_maintenance and spot.is_physically_occupied:
+        spot.vacate(performed_by=current_user)
+        
+    accion = "FUERA DE SERVICIO" if spot.under_maintenance else "HABILITADO"
+    
+    log = ParkingLog(
+        parking_spot_id=spot.id,
+        action='maintenance',
+        performed_by_id=current_user.id,
+        details=f'Espacio marcado como {accion}'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash(f'Espacio {spot.spot_number} ahora está {accion}', 'info')
+    return redirect(url_for('parking.spot_detail', spot_id=spot.id))

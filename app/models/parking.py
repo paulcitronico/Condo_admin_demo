@@ -21,7 +21,12 @@ class ParkingSpot(db.Model):
     status = db.Column(db.String(20), default='available', index=True)
     
     # ═══════════════════════════════════════════════════════
-    # DUEÑO PERMANENTE (el residente al que pertenece el espacio)
+    # ESTADO DE MANTENIMIENTO (NUEVO)
+    # ═══════════════════════════════════════════════════════
+    under_maintenance = db.Column(db.Boolean, default=False) # Fix para AttributeError
+
+    # ═══════════════════════════════════════════════════════
+    # DUEÑO PERMANENTE
     # ═══════════════════════════════════════════════════════
     assigned_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assigned_user = db.relationship(
@@ -31,13 +36,14 @@ class ParkingSpot(db.Model):
     )
     
     # ═══════════════════════════════════════════════════════
-    # NUEVO: OCUPANTE ACTUAL (quién está FÍSICAMENTE ahí)
+    # OCUPANTE ACTUAL (Físico)
     # ═══════════════════════════════════════════════════════
     occupied_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    occupied_by_name = db.Column(db.String(100), nullable=True)  # Para visitas sin cuenta
-    occupied_at = db.Column(db.DateTime, nullable=True)          # Cuándo entró
+    occupied_by_name = db.Column(db.String(100), nullable=True)
+    occupied_at = db.Column(db.DateTime, nullable=True)
+    patente_externa = db.Column(db.String(10))
+    rut_externo = db.Column(db.String(12))
     
-    # Relación con el ocupante (usuario registrado)
     occupant = db.relationship(
         'User', 
         foreign_keys=[occupied_by_id],
@@ -45,7 +51,7 @@ class ParkingSpot(db.Model):
     )
     
     # ═══════════════════════════════════════════════════════
-    # Datos del vehículo del DUEÑO
+    # DATOS DEL VEHÍCULO (Unificados para Dueño y Visita)
     # ═══════════════════════════════════════════════════════
     vehicle_plate = db.Column(db.String(20))
     vehicle_make = db.Column(db.String(50))
@@ -60,22 +66,19 @@ class ParkingSpot(db.Model):
     logs = db.relationship('ParkingLog', backref='parking_spot', lazy='dynamic', cascade='all, delete-orphan')
 
     # ═══════════════════════════════════════════════════════
-    # PROPIEDADES HELPER para determinar el estado visual
+    # PROPIEDADES HELPER
     # ═══════════════════════════════════════════════════════
     
     @property
     def has_owner(self):
-        """¿Tiene un dueño permanente asignado?"""
         return self.assigned_user_id is not None
     
     @property
     def is_physically_occupied(self):
-        """¿Hay alguien FÍSICAMENTE en el espacio ahora?"""
         return self.occupied_by_id is not None or self.occupied_by_name is not None
     
     @property
     def occupant_display_name(self):
-        """Nombre del ocupante actual para mostrar"""
         if self.occupied_by_id and self.occupant:
             return self.occupant.full_name
         elif self.occupied_by_name:
@@ -84,35 +87,31 @@ class ParkingSpot(db.Model):
     
     @property
     def visual_state(self):
-        """
-        Retorna el estado visual del espacio:
-        - 'green'  = libre, sin dueño
-        - 'blue'   = tiene dueño, dueño ausente
-        - 'red'    = sin dueño, ocupado por alguien
-        - 'split'  = tiene dueño + ocupado por otro
-        - 'gray'   = deshabilitado
-        """
+        """Prioridad de estados: Inactivo -> Mantenimiento -> Ocupación"""
         if not self.is_active:
             return 'gray'
+        
+        # El morado tiene prioridad sobre los estados de ocupación
+        if self.under_maintenance:
+            return 'purple'
         
         has_owner = self.has_owner
         is_occupied = self.is_physically_occupied
         
         if has_owner and is_occupied:
-            return 'split'     # 🔵🔴 Mitad azul, mitad rojo
+            return 'split'     # Azul/Rojo
         elif has_owner and not is_occupied:
-            return 'blue'      # 🔵 Dueño ausente
+            return 'blue'      # Dueño ausente
         elif not has_owner and is_occupied:
-            return 'red'       # 🔴 Sin dueño pero alguien lo usa
+            return 'red'       # Visita en espacio libre
         else:
-            return 'green'     # 🟢 Libre
-    
+            return 'green'     # Libre
+        
     # ═══════════════════════════════════════════════════════
     # MÉTODOS DE ACCIÓN
     # ═══════════════════════════════════════════════════════
 
     def assign_to_user(self, user, vehicle_data=None):
-        """Asignar dueño permanente"""
         self.assigned_user_id = user.id
         self.status = 'assigned'
         if vehicle_data:
@@ -121,16 +120,12 @@ class ParkingSpot(db.Model):
             self.vehicle_model = vehicle_data.get('model')
             self.vehicle_color = vehicle_data.get('color')
         
-        log = ParkingLog(
-            parking_spot_id=self.id, 
-            action='assigned', 
-            user_id=user.id, 
-            details=f'Espacio asignado a {user.full_name}'
-        )
-        db.session.add(log)
+        db.session.add(ParkingLog(
+            parking_spot_id=self.id, action='assigned', user_id=user.id, 
+            details=f'Asignado a {user.full_name}'
+        ))
 
     def unassign(self):
-        """Quitar dueño permanente"""
         old_user = self.assigned_user
         self.assigned_user_id = None
         self.status = 'available'
@@ -139,31 +134,35 @@ class ParkingSpot(db.Model):
         self.vehicle_model = None
         self.vehicle_color = None
         
-        # Si también estaba ocupado por otro, lo limpiamos
-        self.occupied_by_id = None
-        self.occupied_by_name = None
-        self.occupied_at = None
-        
         if old_user:
-            log = ParkingLog(
-                parking_spot_id=self.id, 
-                action='unassigned', 
-                user_id=old_user.id, 
-                details=f'Espacio liberado de {old_user.full_name}'
-            )
-            db.session.add(log)
+            db.session.add(ParkingLog(
+                parking_spot_id=self.id, action='unassigned', user_id=old_user.id, 
+                details=f'Liberado de {old_user.full_name}'
+            ))
 
-    def occupy(self, occupant_name=None, occupant_user_id=None, performed_by=None):
+    def occupy(self, occupant_name=None, occupant_user_id=None, performed_by=None, **kwargs):
         """
         Marcar que alguien ENTRÓ al espacio.
         - occupant_name: nombre libre (para visitas)
         - occupant_user_id: id de usuario registrado
+        - **kwargs: acepta cualquier dato extra como patente, rut, etc.
         """
         self.occupied_by_name = occupant_name
         self.occupied_by_id = occupant_user_id
         self.occupied_at = datetime.utcnow()
         self.status = 'occupied'
         
+        # Si enviaste patente o rut en la ruta, se guardan aquí
+        if 'patente' in kwargs:
+            self.patente_externa = kwargs.get('patente')
+        if 'rut' in kwargs:
+            self.rut_externo = kwargs.get('rut')
+            
+        # Si enviaste datos de vehículo para la visita, los unificamos
+        if 'vehicle_make' in kwargs: self.vehicle_make = kwargs.get('vehicle_make')
+        if 'vehicle_model' in kwargs: self.vehicle_model = kwargs.get('vehicle_model')
+        if 'vehicle_color' in kwargs: self.vehicle_color = kwargs.get('vehicle_color')
+
         # Determinar nombre para el log
         name = occupant_name
         if occupant_user_id:
@@ -181,23 +180,28 @@ class ParkingSpot(db.Model):
         db.session.add(log)
 
     def vacate(self, performed_by=None):
-        """Marcar que el ocupante SE FUE del espacio"""
+        """Marcar salida y limpiar datos si era visita"""
         old_name = self.occupant_display_name
         
+        # Si NO tiene dueño fijo, limpiamos los datos del vehículo al salir
+        if not self.has_owner:
+            self.vehicle_plate = None
+            self.vehicle_make = None
+            self.vehicle_model = None
+            self.vehicle_color = None
+            self.patente_externa = None
+            self.rut_externo = None
+
         self.occupied_by_id = None
         self.occupied_by_name = None
         self.occupied_at = None
-        
-        # Si tiene dueño -> queda como 'assigned', si no -> 'available'
         self.status = 'assigned' if self.has_owner else 'available'
         
-        log = ParkingLog(
-            parking_spot_id=self.id,
-            action='vacated',
+        db.session.add(ParkingLog(
+            parking_spot_id=self.id, action='vacated',
             performed_by_id=performed_by.id if performed_by else None,
-            details=f'Espacio desocupado (era: {old_name or "desconocido"})'
-        )
-        db.session.add(log)
+            details=f'Salida de: {old_name or "desconocido"}'
+        ))
 
     @property
     def is_available(self):
