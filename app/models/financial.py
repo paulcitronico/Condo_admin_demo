@@ -20,7 +20,7 @@ class FinancialAccount(db.Model):
     total_owed = db.Column(db.Numeric(10, 2), default=Decimal('0.00'))  # Total adeudado
     total_paid = db.Column(db.Numeric(10, 2), default=Decimal('0.00'))  # Total pagado
 
-    # Estado: current, overdue, critical
+    # Estado: current, overdue, critical, credit (nuevo estado para saldo a favor)
     status = db.Column(db.String(20), default='current', index=True)
     months_overdue = db.Column(db.Integer, default=0)
 
@@ -37,12 +37,15 @@ class FinancialAccount(db.Model):
 
     @property
     def balance(self):
-        """Balance actual (negativo = deuda, positivo = a favor).
+        """Balance actual: 
+        - Positivo = Debe dinero (deuda)
+        - Negativo = Tiene saldo a favor (crédito)
+        - Cero = Al día
         Retorna Decimal para mantener precisión monetaria."""
-        # FIX: convertir ambos campos a Decimal antes de operar
+        # FIX: Corregido el cálculo - ahora owed - paid (positivo = deuda)
         paid = Decimal(str(self.total_paid)) if self.total_paid is not None else Decimal('0.00')
         owed = Decimal(str(self.total_owed)) if self.total_owed is not None else Decimal('0.00')
-        return paid - owed
+        return owed - paid
 
     def update_balance(self):
         """Actualiza el balance basado en transacciones completadas"""
@@ -72,16 +75,20 @@ class FinancialAccount(db.Model):
         self.total_paid = total_paid
 
         # Actualizar estado basado en el balance
-        # FIX: self.balance ya retorna Decimal, comparar con Decimal
+        # FIX: Corregida la lógica - balance positivo = deuda
         balance = self.balance
-        if balance < Decimal('0.00'):
-            debt_amount = abs(balance)
+        if balance > Decimal('0.00'):
+            debt_amount = balance
             if debt_amount > Decimal('1000.00'):  # Deuda crítica > $1000
                 self.status = 'critical'
             else:
                 self.status = 'overdue'
             # Calcular meses de atraso (simplificado)
             self.months_overdue = max(1, self.months_overdue)
+        elif balance < Decimal('0.00'):
+            # Saldo a favor (crédito)
+            self.status = 'credit'
+            self.months_overdue = 0
         else:
             self.status = 'current'
             self.months_overdue = 0

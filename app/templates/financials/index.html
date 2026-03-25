@@ -12,7 +12,7 @@
                 <p class="text-gray-600">Resumen general y estadísticas del mes.</p>
             </div>
             <div class="flex flex-wrap gap-3">
-                {% if  current_user.role.name != 'resident' %}
+                {% if current_user.role.name != 'resident' %}
                 <a href="{{ url_for('financials.accounts') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
                     <i class="fas fa-university mr-2 text-indigo-500"></i> Ver Cuentas
                 </a>
@@ -24,6 +24,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Recaudado Total -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-green-100 text-green-600">
@@ -36,42 +37,40 @@
                 </div>
             </div>
 
+            <!-- Deuda Pendiente - FIX: Ahora muestra deuda real (positiva) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-red-100 text-red-600">
                         <i class="fas fa-exclamation-circle fa-lg"></i>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 uppercase">Deuda Pendiente (Pago de servicios)</p>
+                        <p class="text-sm font-medium text-gray-500 uppercase">Deuda Total Residentes</p>
                         <h3 class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(stats.outstanding_debts or 0) }}</h3>
                     </div>
                 </div>
             </div>
 
+            <!-- Fondo de Reservas - FIX: Calculado correctamente -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-    <div class="flex items-center">
-        <div class="p-3 rounded-full bg-green-100 text-green-600">
-            <i class="fa-sharp fa-solid fa-circle-dollar-to-slot"></i>
-        </div>
-        <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500 uppercase">Fondo de Reservas</p>
-            <h3 id="total-reservas" class="text-2xl font-bold text-gray-900"></h3>
-            <h3 id="total-reservas-10" class="text-2xl font-bold text-gray-900"></h3>
-        </div>
-    </div>
-</div>
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-piggy-bank fa-lg"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 uppercase">Fondo de Reservas (30%)</p>
+                        <h3 id="total-reservas" class="text-2xl font-bold text-gray-900"></h3>
+                    </div>
+                </div>
+            </div>
 
-<script>
-    // Supongamos que tienes el valor total almacenado en una variable
-    var totalCollected = {{ stats.total_collected | default(0) }};
-    
-    // Calcula el % del total
-    var diezPercent = totalCollected * 0.30;
+            <script>
+                // FIX: Cálculo correcto del fondo de reservas (30% de recaudado)
+                var totalCollected = {{ stats.total_collected | default(0) }};
+                var reservasPercent = totalCollected * 0.30;
+                document.getElementById('total-reservas').innerText = '$' + reservasPercent.toFixed(2);
+            </script>
 
-    // Muestra el resultado en la página
-    document.getElementById('total-reservas-10').innerText = '$' + diezPercent.toFixed(2);
-</script>
-
+            <!-- Tasa de Cobro -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center">
                     <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -79,9 +78,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm font-medium text-gray-500 uppercase">Tasa de Cobro</p>
-                        <h3 class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(stats.collection_rate or 0) }}%
-
-</h3>
+                        <h3 class="text-2xl font-bold text-gray-900">{{ "%.1f"|format(stats.collection_rate or 0) }}%</h3>
                     </div>
                 </div>
             </div>
@@ -92,7 +89,7 @@
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-bold text-gray-900 text-indigo-700">Últimas Transacciones</h2>
+                        <h2 class="text-lg font-bold text-indigo-700">Últimas Transacciones</h2>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -100,6 +97,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
                                 </tr>
                             </thead>
@@ -112,12 +110,21 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         Unidad {{ trans.account.unit_number }}
                                     </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {% if trans.transaction_type == 'payment' %}
+                                            <span class="text-green-600 font-medium">Pago</span>
+                                        {% elif trans.transaction_type == 'charge' %}
+                                            <span class="text-red-600 font-medium">Cargo</span>
+                                        {% else %}
+                                            <span class="text-blue-600 font-medium">Ajuste</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {% if trans.transaction_type == 'payment' %}text-green-600{% else %}text-red-600{% endif %}">
                                         {{ '+' if trans.transaction_type == 'payment' else '-' }}${{ "%.2f"|format(trans.amount) }}
                                     </td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">No hay transacciones.</td></tr>
+                                <tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">No hay transacciones.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -126,19 +133,22 @@
             </div>
 
             <div class="space-y-6">
+                <!-- Cuentas Críticas - FIX: Muestra deuda real -->
                 <div class="bg-white shadow-sm border border-gray-200 rounded-xl p-6">
-                    <h2 class="text-lg font-bold text-red-600 mb-4 italic"><i class="fas fa-user-clock mr-2"></i>Cuentas Críticas</h2>
+                    <h2 class="text-lg font-bold text-red-600 mb-4 italic"><i class="fas fa-user-clock mr-2"></i>Cuentas con Deuda</h2>
                     <div class="space-y-3">
                         {% for acc in critical_accounts %}
                         <div class="flex justify-between items-center p-2 rounded-lg bg-red-50">
                             <span class="text-sm font-bold text-gray-800">Unidad {{ acc.unit_number }}</span>
-                            <span class="text-sm font-bold text-red-700">${{ "%.2f"|format(acc.total_owed - acc.total_paid) }}</span>
+                            <span class="text-sm font-bold text-red-700">${{ "%.2f"|format(acc.balance) }}</span>
                         </div>
+                        {% else %}
+                        <p class="text-gray-500 text-sm text-center py-4">No hay cuentas con deuda pendiente</p>
                         {% endfor %}
                     </div>
                 </div>
 
-                {% if  current_user.role.name != 'resident' %}
+                {% if current_user.role.name != 'resident' %}
                 <div class="bg-indigo-900 rounded-xl p-6 text-white shadow-lg">
                     <h3 class="text-lg font-bold mb-4">Pagos de Servicios</h3>
                     <div class="space-y-4">
@@ -150,13 +160,15 @@
                                 <span class="font-bold">${{ "%.2f"|format(service.amount) }}</span>
                             </div>
                         </div>
+                        {% else %}
+                        <p class="text-xs text-indigo-300">No hay servicios pendientes</p>
                         {% endfor %}
                     </div>
                     <a href="{{ url_for('financials.services') }}" class="inline-flex items-center text-xs font-bold text-white hover:text-indigo-200 mt-4 transition-colors">
                         Ver todos los servicios <i class="fas fa-arrow-right ml-2"></i>
                     </a>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
 
         </div>

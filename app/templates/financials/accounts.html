@@ -26,63 +26,90 @@
         </div>
 
         <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-200">
-    <div class="overflow-x-auto"> <!-- Añadido este div -->
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-indigo-700">
-                <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Unidad</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Residente</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Estado</th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Deuda Total</th>
-                    <th class="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Pagado</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for account in accounts.items %}
-                <tr class="hover:bg-blue-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap font-bold text-gray-900">
-                        {{ account.unit_number }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ account.user.full_name if account.user else 'No asignado' }}</div>
-                        <div class="text-xs text-gray-500">{{ account.user.email if account.user else '-' }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if account.status == 'current' %} bg-green-100 text-green-800 
-                            {% elif account.status == 'overdue' %} bg-yellow-100 text-yellow-800 
-                            {% else %} bg-red-100 text-red-800 {% endif %}">
-                            {{ account.status | upper }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">
-                        ${{ "%.2f"|format(account.total_owed) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600">
-                        ${{ "{:,.2f}".format(account.total_paid) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <a href="{{ url_for('financials.account_detail', account_id=account.id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md transition-all">
-                            <i class="fas fa-eye"></i> Detalles
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-indigo-700">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Unidad</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Residente</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Estado</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Deuda Total</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider">Pagado</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-white uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for account in accounts.items %}
+                        <tr class="hover:bg-blue-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-bold text-gray-900">
+                                {{ account.unit_number }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ account.user.full_name if account.user else 'No asignado' }}</div>
+                                <div class="text-xs text-gray-500">{{ account.user.email if account.user else '-' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if account.status == 'current' %} bg-green-100 text-green-800 
+                                    {% elif account.status == 'credit' %} bg-blue-100 text-blue-800
+                                    {% elif account.status == 'overdue' %} bg-yellow-100 text-yellow-800 
+                                    {% else %} bg-red-100 text-red-800 {% endif %}">
+                                    {{ 'AL DÍA' if account.status == 'current' else 'A FAVOR' if account.status == 'credit' else 'ATRASADO' if account.status == 'overdue' else 'CRÍTICO' }}
+                                </span>
+                            </td>
+                            <!-- FIX: Muestra la deuda real (balance cuando es positivo) -->
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold 
+                                {% if account.balance > 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+                                {% if account.balance > 0 %}
+                                    ${{ "%.2f"|format(account.balance) }}
+                                {% else %}
+                                    $0.00
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600">
+                                ${{ "{:,.2f}".format(account.total_paid) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                <a href="{{ url_for('financials.account_detail', account_id=account.id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md transition-all">
+                                    <i class="fas fa-eye"></i> Detalles
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-folder-open text-gray-300 text-5xl mb-4"></i>
+                                    <p class="text-gray-500 text-lg font-medium">No hay cuentas registradas.</p>
+                                    <p class="text-gray-400 text-sm">Usa el botón "Sincronizar" para crearlas desde tus usuarios.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Paginación -->
+        {% if accounts.pages > 1 %}
+        <div class="mt-6 flex justify-center">
+            <nav class="flex space-x-1">
+                {% for page_num in accounts.iter_pages() %}
+                    {% if page_num %}
+                        <a href="{{ url_for('financials.accounts', page=page_num) }}" 
+                           class="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium
+                           {% if page_num == accounts.page %}bg-indigo-600 text-white border-indigo-600
+                           {% else %}text-gray-700 bg-white hover:bg-gray-50{% endif %}">
+                            {{ page_num }}
                         </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="px-6 py-12 text-center">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-folder-open text-gray-300 text-5xl mb-4"></i>
-                            <p class="text-gray-500 text-lg font-medium">No hay cuentas registradas.</p>
-                            <p class="text-gray-400 text-sm">Usa el botón "Sincronizar" para crearlas desde tus usuarios.</p>
-                        </div>
-                    </td>
-                </tr>
+                    {% else %}
+                        <span class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-500">...</span>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
-    </div> <!-- Fin del div añadido -->
-</div>
+            </nav>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

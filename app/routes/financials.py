@@ -16,14 +16,17 @@ bp = Blueprint('financials', __name__, url_prefix='/financials')
 @require_permission('financials', level=1)
 def index():
     stats = get_financial_overview()
+    # FIX: Cuentas críticas - ahora buscamos balance > 0 (deuda real)
     critical_accounts = FinancialAccount.query.filter(
-        FinancialAccount.status == 'critical'
+        FinancialAccount.status.in_(['critical', 'overdue'])
     ).order_by(
         (FinancialAccount.total_owed - FinancialAccount.total_paid).desc()
     ).limit(5).all()
+    
     pending_services = ServicePayment.query.filter_by(
         status='pending'
     ).order_by(ServicePayment.due_date).limit(5).all()
+    
     recent_transactions = FinancialTransaction.query.order_by(
         FinancialTransaction.created_at.desc()
     ).limit(10).all()
@@ -311,30 +314,38 @@ def view_voucher(transaction_id):
                            transaction=transaction,
                            now=datetime.now())
 
+
 def get_financial_overview():
-    # Eliminamos el uso de current_month y current_year para esta suma
-    
-    # NUEVA CONSULTA: Suma absolutamente todos los pagos de tipo 'payment'
+    """Calcula estadísticas financieras del condominio"""
+    # FIX: Suma absolutamente todos los pagos de tipo 'payment'
     total_collected = db.session.query(
         func.sum(FinancialTransaction.amount)
     ).filter(
         FinancialTransaction.transaction_type == 'payment'
     ).scalar() or Decimal('0.00')
 
-    # Mantienes tu lógica de deuda como la tienes actualmente
-    outstanding = db.session.query(
+    # FIX: Deuda total - solo sumamos balances positivos (deuda real)
+    # owed - paid = deuda (positivo) o crédito (negativo)
+    total_balance = db.session.query(
         func.sum(FinancialAccount.total_owed - FinancialAccount.total_paid)
     ).scalar() or Decimal('0.00')
+    
+    # Si el balance total es negativo, significa que hay más créditos que deudas
+    # Mostramos 0 en ese caso, o el valor positivo si hay deuda real
+    outstanding_debts = max(Decimal('0.00'), total_balance)
 
     total_units = FinancialAccount.query.count()
-    collection_rate = (
-        100 if total_units == 0
-        else (FinancialAccount.query.filter_by(status='current').count() / total_units * 100)
-    )
+    
+    # FIX: Unidades al día = las que no tienen deuda (balance <= 0)
+    current_units = FinancialAccount.query.filter(
+        FinancialAccount.total_owed <= FinancialAccount.total_paid
+    ).count()
+    
+    collection_rate = 0 if total_units == 0 else (current_units / total_units * 100)
 
     return {
         'total_collected': float(Decimal(str(total_collected))),
-        'outstanding_debts': float(Decimal(str(outstanding))),
+        'outstanding_debts': float(Decimal(str(outstanding_debts))),
         'collection_rate': collection_rate
     }
 
