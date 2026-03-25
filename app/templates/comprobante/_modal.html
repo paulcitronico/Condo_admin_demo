@@ -1,0 +1,51 @@
+<div id="receiptModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl transform transition-all scale-100">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+            <div>
+                <h3 id="modalTitle" class="font-bold text-gray-900 text-lg">Visualización de Comprobante</h3>
+                <p id="modalUser" class="text-xs text-indigo-600 font-medium"></p>
+            </div>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-900 transition-colors text-3xl">&times;</button>
+        </div>
+        
+        <div class="p-4 flex justify-center bg-gray-100 min-h-[300px] items-center">
+            <img id="modalImage" src="" alt="Comprobante" class="max-w-full max-h-[70vh] rounded shadow-md border border-gray-300">
+        </div>
+        
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+            <a id="downloadBtn" href="#" download class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors">
+                <i class="fas fa-download mr-1"></i> Descargar
+            </a>
+            <button onclick="closeModal()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lógica para abrir el modal y cargar la información
+    document.querySelectorAll('.view-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            const user = this.getAttribute('data-user');
+            
+            document.getElementById('modalImage').src = url;
+            document.getElementById('modalUser').innerText = 'Subido por: ' + user;
+            document.getElementById('downloadBtn').href = url;
+            
+            const modal = document.getElementById('receiptModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Bloquear scroll
+        });
+    });
+
+    function closeModal() {
+        document.getElementById('receiptModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Cerrar al hacer clic fuera del contenido blanco
+    window.onclick = (e) => {
+        const modal = document.getElementById('receiptModal');
+        if (e.target === modal) closeModal();
+    }
+</script>

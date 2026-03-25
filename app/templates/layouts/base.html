@@ -92,6 +92,12 @@
                             </a>
                             {% endif %}
                             
+                            <a href="{{ url_for('comprobante.index') }}" 
+                               @click="mobileMenuOpen = false"
+                               class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-dollar-sign"></i> comprobante de pago
+                            </a>
+                            
                             {% if current_user.can_read('announcements') %}
                             <a href="{{ url_for('announcements.index') }}" 
                                @click="mobileMenuOpen = false"
@@ -105,7 +111,7 @@
                                class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
                                 <i class="fas fa-phone"></i> Contactos
                             </a>
-
+                            
                             <a href="{{ url_for('rules.index') }}" 
                                @click="mobileMenuOpen = false"
                                class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
@@ -184,6 +190,11 @@
                                 <i class="fas fa-dollar-sign mr-3"></i> Finanzas
                             </a>
                             {% endif %}
+
+                            <a href="{{ url_for('comprobante.index') }}" 
+                               class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-dollar-sign mr-3"></i> Comprobantes
+                            </a>
                             
                             {% if current_user.can_read('announcements') %}
                             <a href="{{ url_for('announcements.index') }}" 

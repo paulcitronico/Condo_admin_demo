@@ -1,0 +1,84 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-4 sm:py-8 px-2 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+        
+        <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6 mb-8">
+            <h2 class="text-lg sm:text-xl font-bold mb-4 text-gray-800">Subir Nuevo Comprobante</h2>
+            <form action="{{ url_for('comprobante.upload_receipt') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
+                    <input type="number" step="0.01" name="amount" required class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 text-sm" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha de Pago</label>
+                    <input type="date" name="payment_date" required class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Imagen del Recibo</label>
+                    <input type="file" name="receipt_image" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <div class="md:col-span-3">
+                    <button type="submit" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md text-sm">
+                        Enviar Comprobante
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Usuario</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Monto</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha Pago</th>
+                            <th class="px-4 sm:px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Registro</th>
+                            <th class="px-4 sm:px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        {% for r in receipts %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                {{ r.user.username }}
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                                ${{ "{:,.2f}".format(r.amount) }}
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ r.payment_date.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-xs text-gray-400 italic">
+                                {{ r.created_at.strftime('%d/%m/%y %H:%M') }}
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <button type="button" 
+                                        class="view-btn text-indigo-600 hover:text-indigo-900 font-bold bg-indigo-50 px-3 py-1.5 rounded-md transition-colors"
+                                        data-url="{{ url_for('static', filename='uploads/receipts/' + r.filename) }}"
+                                        data-user="{{ r.user.username }}">
+                                    <span class="hidden sm:inline">Ver Comprobante</span>
+                                    <span class="sm:hidden"><i class="fas fa-eye"></i></span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-400 italic">No hay registros disponibles.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="sm:hidden bg-gray-50 px-4 py-2 text-[10px] text-center text-gray-400 border-t">
+                <i class="fas fa-arrows-alt-h mr-1"></i> Desliza hacia los lados para ver más datos
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "comprobante/_modal.html" %} 
+
+{% endblock %}
