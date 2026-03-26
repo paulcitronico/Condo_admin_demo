@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from sqlalchemy import func, extract
 from app import db
@@ -153,20 +153,41 @@ def add_transaction():
 @login_required
 @require_permission('financials', level=1)
 def services():
-    """Lista de pagos de servicios del edificio"""
+    """Lista de pagos de servicios del edificio con filtros dinámicos"""
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', 'all')
+    category_filter = request.args.get('category', 'all')
+    month_filter = request.args.get('month', 'all')
 
     query = ServicePayment.query
+    today = date.today()
 
-    if status_filter != 'all':
-        query = query.filter_by(status=status_filter)
+    # Filtro de Categoría (que faltaba en tu lógica de Python)
+    if category_filter != 'all':
+        query = query.filter_by(category=category_filter)
+
+    # Lógica de Estado dinámica
+    if status_filter == 'pending':
+        # Solo los que están pendientes Y aún no vencen
+        query = query.filter(ServicePayment.status == 'pending', ServicePayment.due_date >= today)
+    elif status_filter == 'overdue':
+        # El caso que mencionaste: Pendientes cuya fecha ya pasó
+        query = query.filter(ServicePayment.status == 'pending', ServicePayment.due_date < today)
+    elif status_filter == 'paid':
+        query = query.filter_by(status='paid')
+
+    # Filtro por Mes de vencimiento
+    if month_filter != 'all':
+        query = query.filter(extract('month', ServicePayment.due_date) == int(month_filter))
 
     services = query.order_by(ServicePayment.due_date.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
 
-    return render_template('financials/services.html', services=services)
+    # Pasamos 'today' al template para el marcado visual en la tabla
+    return render_template('financials/services.html', 
+                           services=services, 
+                           today=today)
 
 
 @bp.route('/service/add', methods=['GET', 'POST'])
@@ -238,6 +259,31 @@ def mark_service_paid_provider(service_id):
     flash(f'El servicio a {service.provider} ha sido marcado como pagado por el condominio.', 'success')
     return redirect(url_for('financials.service_detail', service_id=service.id))
 
+#nueva ruta de pago directo desde la tabla de servicios
+@bp.route('/service/<int:service_id>/mark-paid', methods=['POST'])
+@login_required
+@require_permission('financials', level=2)
+def mark_service_paid(service_id):
+    """Marca un servicio como pagado directamente desde la tabla"""
+    service = ServicePayment.query.get_or_404(service_id)
+    
+    # Verificar que el servicio esté pendiente
+    if service.status != 'pending':
+        flash('Este servicio ya está pagado o tiene otro estado', 'warning')
+        return redirect(url_for('financials.services'))
+    
+    # Marcar como pagado
+    service.status = 'paid'
+    service.paid_date = datetime.now().date()
+    
+    try:
+        db.session.commit()
+        flash(f'✅ Servicio "{service.service_name}" marcado como pagado exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al marcar el servicio como pagado: {str(e)}', 'danger')
+    
+    return redirect(url_for('financials.services'))
 
 @bp.route('/service/<int:service_id>/pay_resident/<int:account_id>', methods=['POST'])
 @login_required

@@ -55,13 +55,23 @@
             <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium opacity-90">Pendientes</p>
-                        <p class="text-3xl font-bold mt-2">{{ services.items|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+                        <p class="text-sm font-medium opacity-90">Pendientes/Atrasados</p>
+                        <p class="text-3xl font-bold mt-2">
+                            {% set pending_items = services.items|selectattr('status', 'equalto', 'pending')|list %}
+                            {{ pending_items|length }}
+                        </p>
                     </div>
                     <i class="fas fa-clock text-3xl opacity-80"></i>
                 </div>
                 <div class="mt-4 pt-4 border-t border-red-400">
-                    <p class="text-sm opacity-90">Por vencer este mes</p>
+                    {% set overdue_items = pending_items|selectattr('due_date', 'lt', today)|list %}
+                    <p class="text-sm opacity-90">
+                        {% if overdue_items|length > 0 %}
+                            {{ overdue_items|length }} atrasado{{ 's' if overdue_items|length > 1 else '' }}
+                        {% else %}
+                            Sin atrasos
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
@@ -104,18 +114,18 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
                                 onchange="this.form.submit()">
                             <option value="all" {% if request.args.get('month') == 'all' %}selected{% endif %}>Todos los meses</option>
-                            <option value="1">Enero</option>
-                            <option value="2">Febrero</option>
-                            <option value="3">Marzo</option>
-                            <option value="4">Abril</option>
-                            <option value="5">Mayo</option>
-                            <option value="6">Junio</option>
-                            <option value="7">Julio</option>
-                            <option value="8">Agosto</option>
-                            <option value="9">Septiembre</option>
-                            <option value="10">Octubre</option>
-                            <option value="11">Noviembre</option>
-                            <option value="12">Diciembre</option>
+                            <option value="1" {% if request.args.get('month') == '1' %}selected{% endif %}>Enero</option>
+                            <option value="2" {% if request.args.get('month') == '2' %}selected{% endif %}>Febrero</option>
+                            <option value="3" {% if request.args.get('month') == '3' %}selected{% endif %}>Marzo</option>
+                            <option value="4" {% if request.args.get('month') == '4' %}selected{% endif %}>Abril</option>
+                            <option value="5" {% if request.args.get('month') == '5' %}selected{% endif %}>Mayo</option>
+                            <option value="6" {% if request.args.get('month') == '6' %}selected{% endif %}>Junio</option>
+                            <option value="7" {% if request.args.get('month') == '7' %}selected{% endif %}>Julio</option>
+                            <option value="8" {% if request.args.get('month') == '8' %}selected{% endif %}>Agosto</option>
+                            <option value="9" {% if request.args.get('month') == '9' %}selected{% endif %}>Septiembre</option>
+                            <option value="10" {% if request.args.get('month') == '10' %}selected{% endif %}>Octubre</option>
+                            <option value="11" {% if request.args.get('month') == '11' %}selected{% endif %}>Noviembre</option>
+                            <option value="12" {% if request.args.get('month') == '12' %}selected{% endif %}>Diciembre</option>
                         </select>
                     </div>
                     <div class="flex items-end">
@@ -160,21 +170,26 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                 <i class="fas fa-calendar-check mr-1"></i>Estado
                             </th>
-                            <!-- <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                 <i class="fas fa-cogs mr-1"></i>Acciones
-                            </th> -->
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for service in services.items %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        {# Calcular estado visual dinámicamente #}
+                        {% set is_overdue = service.status == 'pending' and service.due_date < today %}
+                        {% set visual_status = 'overdue' if is_overdue else service.status %}
+                        {% set row_class = 'bg-red-50 border-l-4 border-red-400' if is_overdue else 'hover:bg-gray-50 transition-colors duration-150' %}
+                        
+                        <tr class="{{ row_class }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                        <i class="fas fa-file-invoice text-blue-600"></i>
+                                    <div class="flex-shrink-0 h-10 w-10 {{ 'bg-red-100' if is_overdue else 'bg-blue-100' }} rounded-lg flex items-center justify-center mr-3">
+                                        <i class="fas fa-file-invoice {{ 'text-red-600' if is_overdue else 'text-blue-600' }}"></i>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-bold text-gray-900">{{ service.service_name }}</div>
+                                        <div class="text-sm font-bold {{ 'text-red-900' if is_overdue else 'text-gray-900' }}">{{ service.service_name }}</div>
                                         {% if service.invoice_number %}
                                         <div class="text-xs text-gray-500">Factura: {{ service.invoice_number }}</div>
                                         {% endif %}
@@ -182,7 +197,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ service.provider or 'N/A' }}</div>
+                                <div class="text-sm {{ 'text-red-800 font-medium' if is_overdue else 'text-gray-900' }}">{{ service.provider or 'N/A' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
@@ -196,26 +211,30 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-lg font-bold text-gray-900">${{ "%.2f"|format(service.amount) }}</div>
+                                <div class="text-lg font-bold {{ 'text-red-600' if is_overdue else 'text-gray-900' }}">${{ "%.2f"|format(service.amount) }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
-                                    <span class="text-sm font-medium text-gray-900">{{ service.due_date.strftime('%d/%m/%Y') }}</span>
+                                    <i class="fas fa-calendar-alt {{ 'text-red-500' if is_overdue else 'text-gray-400' }} mr-2"></i>
+                                    <span class="text-sm font-medium {{ 'text-red-600 font-bold' if is_overdue else 'text-gray-900' }}">{{ service.due_date.strftime('%d/%m/%Y') }}</span>
                                 </div>
-                                <!-- Removed days left calculation since 'today' variable is not defined -->
+                                {% if is_overdue %}
+                                <div class="text-xs text-red-500 mt-1 font-medium">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>Vencido
+                                </div>
+                                {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
-                                        {% if service.status == 'paid' %}bg-green-100 text-green-800 border border-green-200
-                                        {% elif service.status == 'overdue' %}bg-red-100 text-red-800 border border-red-200
+                                        {% if visual_status == 'paid' %}bg-green-100 text-green-800 border border-green-200
+                                        {% elif visual_status == 'overdue' %}bg-red-100 text-red-800 border border-red-200
                                         {% else %}bg-yellow-100 text-yellow-800 border border-yellow-200{% endif %}">
                                         <span class="w-1.5 h-1.5 rounded-full mr-1.5
-                                            {% if service.status == 'paid' %}bg-green-500
-                                            {% elif service.status == 'overdue' %}bg-red-500
+                                            {% if visual_status == 'paid' %}bg-green-500
+                                            {% elif visual_status == 'overdue' %}bg-red-500
                                             {% else %}bg-yellow-500{% endif %}"></span>
-                                        {{ service.status|upper }}
+                                        {% if visual_status == 'overdue' %}ATRASADO{% else %}{{ visual_status|upper }}{% endif %}
                                     </span>
                                     {% if service.paid_date %}
                                     <div class="ml-2 text-xs text-gray-500">
@@ -224,19 +243,20 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <!-- <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-2">
-                                    <a href="{{ url_for('financials.service_detail', service_id=service.id) }}" 
-                                       class="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 font-medium text-sm">
-                                        <i class="fas fa-eye mr-1.5"></i>Ver
-                                    </a>
-                                    {% if current_user.can_write('financials') and service.status != 'paid' %}
-                                    <button class="inline-flex items-center px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-all duration-200 font-medium text-sm">
-                                        <i class="fas fa-check mr-1.5"></i>Pagar
-                                    </button>
+                                    {% if service.status == 'pending' %}
+                                    <form method="POST" action="{{ url_for('financials.mark_service_paid', service_id=service.id) }}" 
+                                          style="display: inline;"
+                                          onsubmit="return confirm('¿Está seguro de marcar este servicio como pagado?');">
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-all duration-200 font-medium text-sm">
+                                            <i class="fas fa-check-circle mr-1.5"></i>Pagar
+                                        </button>
+                                    </form>
                                     {% endif %}
-                                </div> 
-                            </td> -->
+                                </div>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
@@ -314,22 +334,37 @@
         <div class="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen Financiero</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% set pending_items = services.items|selectattr('status', 'equalto', 'pending')|list %}
+                {% set overdue_items = pending_items|selectattr('due_date', 'lt', today)|list %}
+                {% set pending_not_overdue = pending_items|selectattr('due_date', 'ge', today)|list %}
+                
                 <div class="p-4 bg-white rounded-lg border border-gray-300">
-                    <p class="text-sm text-gray-600">Total Pendiente</p>
+                    <p class="text-sm text-gray-600">Total Pendiente (por vencer)</p>
                     <p class="text-2xl font-bold text-yellow-600">
-                        ${% set pending_total = services.items|selectattr('status', 'equalto', 'pending')|map(attribute='amount')|sum %}{{ "%.2f"|format(pending_total) }}
+                        ${{ "%.2f"|format(pending_not_overdue|map(attribute='amount')|sum) }}
                     </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ pending_not_overdue|length }} servicio(s)</p>
                 </div>
+                
+                <div class="p-4 bg-white rounded-lg border border-red-300 bg-red-50">
+                    <p class="text-sm text-red-600 font-medium">Total Atrasado (vencido)</p>
+                    <p class="text-2xl font-bold text-red-600">
+                        ${{ "%.2f"|format(overdue_items|map(attribute='amount')|sum) }}
+                    </p>
+                    <p class="text-xs text-red-500 mt-1">{{ overdue_items|length }} servicio(s) vencido(s)</p>
+                </div>
+                
                 <div class="p-4 bg-white rounded-lg border border-gray-300">
                     <p class="text-sm text-gray-600">Total Pagado</p>
                     <p class="text-2xl font-bold text-green-600">
-                        ${% set paid_total = services.items|selectattr('status', 'equalto', 'paid')|map(attribute='amount')|sum %}{{ "%.2f"|format(paid_total) }}
+                        ${{ "%.2f"|format(services.items|selectattr('status', 'equalto', 'paid')|map(attribute='amount')|sum) }}
                     </p>
                 </div>
-                <div class="p-4 bg-white rounded-lg border border-gray-300">
+                
+                <div class="p-4 bg-white rounded-lg border border-gray-300 md:col-span-3">
                     <p class="text-sm text-gray-600">Total General</p>
                     <p class="text-2xl font-bold text-blue-600">
-                        ${% set total_amount = services.items|map(attribute='amount')|sum %}{{ "%.2f"|format(total_amount) }}
+                        ${{ "%.2f"|format(services.items|map(attribute='amount')|sum) }}
                     </p>
                 </div>
             </div>
