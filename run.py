@@ -11,6 +11,6 @@ def init_db():
     run_db_initialization()
 
 if __name__ == '__main__':
-    # Railway requiere el host 0.0.0.0 y el puerto de la variable de entorno PORT
+    # Desarrollo local - puerto 5000
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, host='127.0.0.1', port=port)

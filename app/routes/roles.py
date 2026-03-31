@@ -28,6 +28,7 @@ def index():
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
+    # FIX: Asegurar que solo muestre roles activos
     roles = Role.query.filter_by(is_active=True).paginate(
         page=page, per_page=per_page, error_out=False
     )
@@ -60,6 +61,7 @@ def users():
         page=page, per_page=20, error_out=False
     )
     
+    # FIX: Solo mostrar roles activos en el filtro
     roles = Role.query.filter_by(is_active=True).all()
     
     return render_template('roles/users.html', users=users, roles=roles)
@@ -90,6 +92,7 @@ def edit_user(user_id):
         flash(f'Usuario {user.full_name} actualizado exitosamente', 'success')
         return redirect(url_for('roles.users'))
     
+    # FIX: Solo roles activos disponibles para asignar
     roles = Role.query.filter_by(is_active=True).all()
     return render_template('roles/edit_user.html', user=user, roles=roles)
 
@@ -177,5 +180,6 @@ def create_user():
         flash(f'Usuario {user.full_name} creado exitosamente', 'success')
         return redirect(url_for('roles.users'))
     
+    # FIX: Solo roles activos en el formulario de creación
     roles = Role.query.filter_by(is_active=True).all()
     return render_template('roles/create_user.html', roles=roles)

@@ -1,15 +1,23 @@
 import os
 from datetime import timedelta
 
+# Obtener el directorio base del proyecto (donde está este archivo)
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Asegurar que el directorio de instancia exista
+instance_dir = os.path.join(basedir, 'instance')
+os.makedirs(instance_dir, exist_ok=True)
 
 
 class Config:
     """Configuración base para la aplicación"""
     
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'clave-super-secreta-cambiala-en-produccion'
+    
+    # FIX: Ruta absoluta y explícita para SQLite
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'app/instance/condo_admin.db')
+        'sqlite:///' + os.path.join(instance_dir, 'condo_admin.db')
+    
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de sesiones
@@ -21,6 +29,9 @@ class Config:
     # Configuración de uploads (para futuras imágenes/documentos)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
+    
+    # Asegurar que existe el directorio de uploads
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     
     # Zona horaria
     TIMEZONE = 'America/Santiago'

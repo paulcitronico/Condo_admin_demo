@@ -33,6 +33,17 @@ def create_app(config_name='default'):
         if utc_dt.tzinfo is None: utc_dt = pytz.utc.localize(utc_dt)
         return utc_dt.astimezone(tz).strftime('%d/%m/%Y %H:%M')
 
+    # NUEVO FILTRO: month_name para convertir número de mes a nombre
+    @app.template_filter('month_name')
+    def month_name_filter(month_number):
+        """Convierte un número de mes (1-12) a su nombre en español"""
+        months = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+        }
+        return months.get(month_number, 'Desconocido')
+
     # Registro de Blueprints
     from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements, contacts, rules
     from app.routes.paqueteria import bp as paqueteria_bp
