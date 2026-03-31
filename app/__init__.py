@@ -1,10 +1,11 @@
-from flask import Flask
+from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import config
 from datetime import datetime
 import pytz  # <-- Añadido para manejo de zona horaria
+from flask import redirect, url_for
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -71,6 +72,11 @@ def create_app(config_name='default'):
     app.register_blueprint(announcements.bp)
     app.register_blueprint(contacts.bp)
     app.register_blueprint(rules.bp)
+
+    @app.route('/')
+    def index():
+        return redirect(url_for('auth.login'))
+
 
     # Crear tablas si no existen
     with app.app_context():

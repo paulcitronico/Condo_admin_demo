@@ -12,7 +12,7 @@ bp = Blueprint('announcements', __name__, url_prefix='/announcements')
 
 
 def build_announcement_email_content(announcement):
-    base_url = "https://jl2flq77-5000.brs.devtunnels.ms"
+    base_url = "web-production-290b1.up.railway.app"
     path = url_for('announcements.detail', announcement_id=announcement.id)
     announcement_url = f"{base_url}{path}"
 
