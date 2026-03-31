@@ -1,11 +1,10 @@
-from flask import Flask, url_for
+from flask import Flask, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import config
 from datetime import datetime
-import pytz  # <-- Añadido para manejo de zona horaria
-from flask import redirect, url_for
+import pytz  # Para manejo de zona horaria
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -41,26 +40,26 @@ def create_app(config_name='default'):
             return ''
         return text.replace('\n', '<br>')
 
-    # NUEVO FILTRO: Convierte UTC a la hora local configurada
     @app.template_filter('localtime')
     def localtime_filter(utc_dt):
         if utc_dt is None:
             return ''
-        tz = pytz.timezone(app.config['TIMEZONE'])
-        # Si la fecha es naive (sin zona), asumimos UTC
+        tz = pytz.timezone(app.config.get('TIMEZONE', 'UTC'))
         if utc_dt.tzinfo is None:
             utc_dt = pytz.utc.localize(utc_dt)
         local_dt = utc_dt.astimezone(tz)
         return local_dt.strftime('%d/%m/%Y %H:%M')
 
     @app.context_processor
-    def utility_processor():
-        return dict(now=datetime.now)
+    def inject_now():
+        # Único punto de verdad para la variable 'now' en templates
+        return {'now': datetime.utcnow()}
     
     # Registrar blueprints
     from app.routes import auth, dashboard, roles, bookings, parking, financials, announcements, contacts, rules
     from app.routes.paqueteria import bp as paqueteria_bp
     from app.routes.comprobante import bp as comprobante_bp
+    
     app.register_blueprint(paqueteria_bp)
     app.register_blueprint(comprobante_bp)
     app.register_blueprint(auth.bp)
@@ -73,23 +72,18 @@ def create_app(config_name='default'):
     app.register_blueprint(contacts.bp)
     app.register_blueprint(rules.bp)
 
+    # SOLUCIÓN ERROR 500: Ruta raíz redirige al login
     @app.route('/')
     def index():
         return redirect(url_for('auth.login'))
 
-
-    # Crear tablas si no existen
+    # SOLUCIÓN RATE LIMIT: Se desactiva la inicialización automática en el arranque.
+    # Para inicializar la DB, usa el comando: flask init-db
+    """
     with app.app_context():
         db.create_all()
-        
-        # Inicializar datos por defecto
-        from app.models.user import User, Role, ModulePermission
         init_default_data()
-    
-    @app.context_processor
-    def inject_now():
-        # Esto permite usar {{ now }} en cualquier HTML
-        return {'now': datetime.utcnow()}
+    """
     
     return app
 
@@ -114,7 +108,7 @@ def init_default_data():
     
     db.session.commit()
     
-    # Crear roles por defecto si no existen
+    # Crear roles por defecto
     roles_data = [
         {
             'name': 'super_admin',
@@ -155,7 +149,6 @@ def init_default_data():
             db.session.add(role)
             db.session.flush()
             
-            # Crear permisos para cada módulo
             for module_name, level in permissions.items():
                 module = Module.query.filter_by(name=module_name).first()
                 if module:
@@ -168,7 +161,7 @@ def init_default_data():
     
     db.session.commit()
     
-    # Crear usuario admin por defecto si no existe
+    # Crear usuario admin
     if not User.query.filter_by(email='admin@condoadmin.com').first():
         admin_role = Role.query.filter_by(name='super_admin').first()
         admin_user = User(
@@ -179,7 +172,6 @@ def init_default_data():
             role_id=admin_role.id,
             is_active=True
         )
-        admin_user.set_password('admin123')  # Cambiar en producción
+        admin_user.set_password('admin123')
         db.session.add(admin_user)
         db.session.commit()
-        print("✅ Usuario admin creado: admin@condoadmin.com / admin123")
