@@ -7,7 +7,10 @@ from app import db
 from app.models.announcement import Announcement, AnnouncementAcknowledgment
 from app.models.user import User
 from app.routes.roles import require_permission
+from datetime import datetime
+import pytz # Debes instalarlo con: pip install pytz
 
+chile_tz = pytz.timezone('America/Santiago')
 bp = Blueprint('announcements', __name__, url_prefix='/announcements')
 
 
@@ -145,6 +148,7 @@ def detail(announcement_id):
 def create():
     """Crear nuevo anuncio"""
     if request.method == 'POST':
+        now_chile = datetime.now(chile_tz)
         announcement = Announcement(
             title=request.form.get('title'),
             content=request.form.get('content'),
@@ -152,7 +156,8 @@ def create():
             category=request.form.get('category'),
             affected_area=request.form.get('affected_area'),
             author_id=current_user.id,
-            is_published=request.form.get('is_published') == 'on'
+            is_published=request.form.get('is_published') == 'on',
+            publish_date=now_chile,
         )
         
         expiry_date_str = request.form.get('expiry_date')
