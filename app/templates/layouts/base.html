@@ -57,7 +57,7 @@
                             <a href="{{ url_for('dashboard.index') }}" 
                                @click="mobileMenuOpen = false"
                                class="text-white hover:bg-blue-700 block px-3 py-2 rounded-md text-base font-medium">
-                                <i class="fas fa-dashboard"></i> Dashboard
+                                <i class="fas fa-dashboard"></i> Inicio
                             </a>
                             
                             {% if current_user.can_read('roles') %}
@@ -160,7 +160,7 @@
                         <nav class="flex-1 px-2 py-4 space-y-1">
                             <a href="{{ url_for('dashboard.index') }}" 
                                class="text-white hover:bg-blue-700 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                                <i class="fas fa-dashboard mr-3"></i> Dashboard
+                                <i class="fas fa-dashboard mr-3"></i> Inicio
                             </a>
                             
                             {% if current_user.can_read('roles') %}
