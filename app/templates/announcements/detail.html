@@ -70,13 +70,6 @@
                         <div class="prose prose-sm max-w-none text-gray-700">
                             {{ announcement.content }}
                         </div>
-                        <button onclick="window.print()" 
-        class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-    </svg>
-    Imprimir Anuncio
-</button>
                     </div>
                 </div>
             </div>
@@ -104,7 +97,13 @@
                             <i class="fas fa-envelope mr-2"></i>
                             Previsualizar Correo
                         </a>
-                        
+                        <button onclick="window.print()" 
+        class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+    </svg>
+    Imprimir Anuncio
+</button>
 
                         <form method="POST" action="{{ url_for('announcements.delete', announcement_id=announcement.id) }}" 
                               onsubmit="return confirm('¿Estás seguro de eliminar este anuncio?')">
@@ -134,4 +133,42 @@
         </div>
     </div>
 </div>
+<style>
+@media print {
+    /* 1. Ocultar absolutamente todo por defecto */
+    body * {
+        visibility: hidden;
+    }
+
+    /* 2. Hacer visible solo el contenedor del anuncio y sus hijos */
+    /* Buscamos el div con lg:col-span-2 que contiene el anuncio principal */
+    .lg\:col-span-2, .lg\:col-span-2 * {
+        visibility: visible;
+    }
+
+    /* 3. Posicionar el anuncio al principio de la página impresa */
+    .lg\:col-span-2 {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 4. Ocultar elementos dentro del anuncio que no queremos en papel */
+    .lg\:col-span-2 button, 
+    .lg\:col-span-2 .bg-blue-50, /* Opcional: si quieres quitar el fondo celeste del encabezado */
+    nav, 
+    footer {
+        display: none !important;
+    }
+    
+    /* 5. Ajustes de diseño para que se vea bien en A4 */
+    .bg-white {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
 {% endblock %}
