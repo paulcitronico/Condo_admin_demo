@@ -17,7 +17,7 @@
             </div>
 
             <!-- Form -->
-            <form method="POST" action="{{ url_for('announcements.edit', announcement_id=announcement.id) }}" class="p-6 space-y-6" id="edit-form">
+            <form method="POST" action="{{ url_for('announcements.edit', announcement_id=announcement.id) }}" class="p-6 space-y-6">
                 <!-- Título -->
                 <div>
                     <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
@@ -33,15 +33,17 @@
                            placeholder="Ingresa el título del anuncio">
                 </div>
 
-                <!-- EDITOR DE TEXTO ENRIQUECIDO -->
+                <!-- Contenido -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
                         Contenido <span class="text-red-500">*</span>
                     </label>
-                    <!-- Contenedor del Editor Quill -->
-                    <div id="editor-container" class="bg-white border border-gray-300 rounded-lg" style="min-height: 250px;"></div>
-                    <!-- Input oculto para enviar el HTML al servidor -->
-                    <input type="hidden" name="content" id="content-input" required>
+                    <textarea id="content" 
+                              name="content" 
+                              rows="6" 
+                              required
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                              placeholder="Escribe el contenido del anuncio...">{{ announcement.content }}</textarea>
                 </div>
 
                 <!-- Fila de Prioridad y Categoría -->
@@ -134,89 +136,4 @@
         </div>
     </div>
 </div>
-
-<!-- Script para inicializar Quill con contenido existente -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Toolbar options
-    const toolbarOptions = [
-        ['bold', 'italic', 'underline', 'strike'],
-        ['blockquote', 'code-block'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'script': 'sub'}, { 'script': 'super' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        [{ 'size': ['small', false, 'large', 'huge'] }],
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        ['clean']
-    ];
-
-    // Inicializar Quill
-    const quill = new Quill('#editor-container', {
-        theme: 'snow',
-        placeholder: 'Escribe el contenido del anuncio...',
-        modules: {
-            toolbar: toolbarOptions
-        }
-    });
-
-    // CARGAR CONTENIDO EXISTENTE
-    // Usar tojson para escapar correctamente el contenido
-    const existingContent = {{ announcement.content | tojson | safe }};
-    if (existingContent && existingContent !== 'null') {
-        quill.root.innerHTML = existingContent;
-    }
-
-    // Sincronizar al enviar el formulario
-    const form = document.getElementById('edit-form');
-    const contentInput = document.getElementById('content-input');
-
-    form.addEventListener('submit', function(e) {
-        const htmlContent = quill.root.innerHTML;
-        contentInput.value = htmlContent;
-
-        const textContent = quill.getText().trim();
-        if (textContent.length === 0) {
-            e.preventDefault();
-            alert('El contenido no puede estar vacío');
-            quill.focus();
-            return false;
-        }
-    });
-});
-</script>
-
-<style>
-#editor-container {
-    min-height: 250px;
-}
-.ql-editor {
-    min-height: 250px;
-    font-size: 16px;
-    line-height: 1.5;
-}
-.ql-toolbar {
-    border-radius: 0.5rem 0.5rem 0 0;
-    background-color: #f9fafb;
-    border-color: #d1d5db;
-}
-#editor-container {
-    border-radius: 0 0 0.5rem 0.5rem;
-    border-top: none;
-}
-.ql-toolbar button:hover {
-    background-color: #e5e7eb;
-}
-.ql-toolbar .ql-picker-label:hover,
-.ql-toolbar .ql-picker-item:hover {
-    color: #2563eb;
-}
-.ql-toolbar .ql-stroke {
-    stroke: #374151;
-}
-.ql-toolbar .ql-fill {
-    fill: #374151;
-}
-</style>
 {% endblock %}
