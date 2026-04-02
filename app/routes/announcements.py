@@ -156,7 +156,7 @@ def create():
             category=request.form.get('category'),
             affected_area=request.form.get('affected_area'),
             author_id=current_user.id,
-            is_published=request.form.get('is_published') == 'on'
+            is_published=request.form.get('is_published') == 'on',
             publish_date=now_chile,
         )
         
