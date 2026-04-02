@@ -17,39 +17,40 @@ bp = Blueprint('announcements', __name__, url_prefix='/announcements')
 def build_announcement_email_content(announcement):
     base_url = "web-production-290b1.up.railway.app"
     path = url_for('announcements.detail', announcement_id=announcement.id)
-    announcement_url = f"{base_url}{path}"
+    announcement_url = f"http://{base_url}{path}"
 
     subject = f"📢 Nuevo comunicado: {announcement.title}"
 
+    # Construimos el cuerpo con HTML para que soporte el contenido del editor
     body = (
-        f"Hola,\n\n"
-        f"Se publicó un nuevo comunicado en la comunidad.\n\n"
-        f"📢 Título: {announcement.title}\n"
-        f"📌 Prioridad: {(announcement.priority or 'normal').upper()}\n"
-        f"📂 Categoría: {announcement.category or 'General'}\n"
-        f"📅 Fecha: {announcement.created_at.strftime('%d/%m/%Y %H:%M')}\n\n"
-        f"Puedes revisarlo completo aquí:\n"
-        f"{announcement_url}\n\n"
-        f"Saludos cordiales,\n"
-        f"Administración"
+        f"<html><body>"
+        f"<h2>Hola,</h2>"
+        f"<p>Se ha publicado un nuevo comunicado en la plataforma de la comunidad.</p>"
+        f"<hr>"
+        f"<p><b>📢 Título:</b> {announcement.title}</p>"
+        f"<p><b>📌 Prioridad:</b> {(announcement.priority or 'normal').upper()}</p>"
+        f"<p><b>📂 Categoría:</b> {announcement.category or 'General'}</p>"
+        f"<div style='background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+        f"{announcement.content}" # Este ya trae el HTML del editor
+        f"</div>"
+        f"<p><a href='{announcement_url}' style='background: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Ver Comunicado Completo</a></p>"
+        f"<br><p>Saludos,<br><b>Administración del Condominio</b></p>"
+        f"</body></html>"
     )
 
     return subject, body
 
 
 def send_mass_announcement_email(announcement, recipients):
-    """
-    Envía correo masivo a una lista de usuarios
-    """
-    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_SERVER = "smtp.gmail.com" # Ajustar según tu proveedor
     SMTP_PORT = 587
-    SMTP_USER = "tu.correo@gmail.com"
-    SMTP_PASS = "tu_clave_de_aplicacion"
+    SMTP_USER = "tu-email@gmail.com"
+    SMTP_PASS = "tu-password-de-aplicacion"
 
     subject, body = build_announcement_email_content(announcement)
-
-    sent = 0
-    failed = 0
+    
+    sent_count = 0
+    failed_count = 0
     errors = []
 
     try:
@@ -59,33 +60,24 @@ def send_mass_announcement_email(announcement, recipients):
 
         for user in recipients:
             try:
-                msg = MIMEText(body, _charset="utf-8")
+                # CAMBIO CLAVE: Se envía como 'html'
+                msg = MIMEText(body, 'html', _charset="utf-8")
                 msg["Subject"] = subject
                 msg["From"] = SMTP_USER
                 msg["To"] = user.email
 
                 server.send_message(msg)
-                sent += 1
+                sent_count += 1
             except Exception as e:
-                failed += 1
-                errors.append(f"{user.full_name} ({user.email}): {str(e)}")
+                failed_count += 1
+                errors.append(str(e))
 
         server.quit()
-
+        return {"success": True, "sent": sent_count, "failed": failed_count, "errors": errors}
     except Exception as e:
-        return {
-            "success": False,
-            "sent": sent,
-            "failed": len(recipients),
-            "errors": [str(e)]
-        }
+        return {"success": False, "sent": 0, "failed": len(recipients), "errors": [str(e)]}
 
-    return {
-        "success": True,
-        "sent": sent,
-        "failed": failed,
-        "errors": errors
-    }
+#
 
 
 @bp.route('/')
